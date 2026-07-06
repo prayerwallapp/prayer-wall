@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-color: #6366f1;
+  --background-color: #fafaf9;
+}
+
+body {
+  background-color: var(--background-color);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Emoji reaction burst (components/wall/SubmissionCard.tsx) */
+@keyframes burst {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0.3); opacity: 0; }
+}
+.burst-emoji {
+  position: fixed;
+  pointer-events: none;
+  font-size: 1.5rem;
+  z-index: 60;
+  animation: burst 0.6s ease-out forwards;
+}
+
+/* Display app (app/display): slow vertical auto-scroll through overflowing
+   submissions, pure CSS — the track is rendered twice for a seamless loop. */
+@keyframes display-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); }
+}
+.display-scroll {
+  animation: display-scroll var(--scroll-duration, 60s) linear infinite;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}

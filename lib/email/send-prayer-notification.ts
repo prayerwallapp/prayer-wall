@@ -1,0 +1,54 @@
+import { createElement } from 'react'
+import { Resend } from 'resend'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { buildChurchUrl } from '@/lib/church-context'
+import PrayerNotificationEmail from '@/emails/prayer-notification'
+import type { NotificationRow, UserRow } from '@/lib/supabase/types'
+
+// Always read from env — never hardcode a domain or resend.dev sandbox address.
+const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? 'Prayer Wall <noreply@prayerwallapp.com>'
+
+export async function sendPrayerNotificationEmail(
+  owner: Pick<UserRow, 'email' | 'display_name'>,
+  notif: Pick<NotificationRow, 'church_id' | 'prayer_count'>,
+  reactor: { id: string; display_name: string | null },
+  kind: 'prayer' | 'praise'
+): Promise<void> {
+  const resend = new Resend(process.env.RESEND_API_KEY)
+  const admin = createAdminClient()
+
+  const { data: church } = await admin
+    .from('churches')
+    .select('name, logo_url, brand_color, subdomain, hide_member_names')
+    .eq('id', notif.church_id)
+    .single()
+
+  if (!church) return
+
+  // Respect hide_member_names: if true, anonymise the reactor.
+  const reactorName =
+    church.hide_member_names
+      ? 'A member of your church family'
+      : reactor.display_name ?? 'Someone'
+
+  const subject =
+    kind === 'praise'
+      ? `${reactorName} celebrated with you`
+      : `${reactorName} prayed for you`
+
+  await resend.emails.send({
+    from: FROM_ADDRESS,
+    to: owner.email,
+    subject,
+    react: createElement(PrayerNotificationEmail, {
+      churchName: church.name,
+      churchLogoUrl: church.logo_url,
+      brandColor: church.brand_color,
+      recipientName: owner.display_name,
+      reactorName,
+      kind,
+      prayerCount: notif.prayer_count,
+      wallUrl: buildChurchUrl(church as Parameters<typeof buildChurchUrl>[0], '/'),
+    }),
+  })
+}
