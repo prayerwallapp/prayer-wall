@@ -164,7 +164,7 @@ export default async function SettingsPage() {
                 <p className="text-xs font-medium text-zinc-600">Embed snippet</p>
                 <div className="flex items-start gap-2">
                   <pre className="flex-1 overflow-x-auto rounded-md bg-zinc-50 p-3 text-xs text-zinc-700">
-                    {`<iframe src="https://${church.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'prayerwall.com'}/wall" width="100%" height="800" frameborder="0"></iframe>`}
+                    {`<iframe src="https://${church.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'prayerwallapp.com'}/wall" width="100%" height="800" frameborder="0"></iframe>`}
                   </pre>
                 </div>
                 <p className="text-xs text-zinc-500">

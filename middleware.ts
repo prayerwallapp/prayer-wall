@@ -11,10 +11,10 @@ const PROD_HOSTNAME = 'prayerwallapp.com'
  * Returns the tenant subdomain for a request host, or null for the root
  * domain / www / bare apex (marketing site, no church context).
  *
- * Examples (ROOT_DOMAIN = "prayerwall.com"):
- *   hillsong.prayerwall.com -> "hillsong"
- *   prayerwall.com          -> null
- *   www.prayerwall.com      -> null
+ * Examples (ROOT_DOMAIN = "prayerwallapp.com"):
+ *   hillsong.prayerwallapp.com -> "hillsong"
+ *   prayerwallapp.com          -> null
+ *   www.prayerwallapp.com      -> null
  */
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(':')[0]

@@ -355,8 +355,11 @@ Reason is visible to moderator in the inbox to explain the flag.
 - [x] Label override settings
 - [x] Keyword moderation rules (hold / escalate tiers)
 - [x] Weekly email digest (Resend + React Email)
-- [ ] Keep-alive Vercel cron job — verify status
+- [x] Keep-alive cron job — verified live (Session 8.1): GET /api/ping returns `{"ok":true}` HTTP 200 with correct CRON_SECRET auth; both /api/ping and /api/digest are registered in vercel.json
 - [x] Landing page with waitlist capture
+- [x] Privacy Policy — live at /privacy-policy; content drafted and marked DRAFT pending attorney review (Session 8.1)
+- [x] Terms of Service — live at /terms-of-service; same draft status; note: Section 8 references "our pricing page" which does not yet exist (Session 8.1)
+- [x] Sign-up consent line ("By continuing, you agree to our Terms of Service and Privacy Policy") added to sign-in modal, links confirmed working across subdomains (Session 8.1)
 - [x] Platform watermark (free tier) — verified with real HTTP: plan=free renders watermark in RSC payload, plan=pro does not
 - [x] Personalized wall query for authenticated members (own submissions any status + others' approved/public)
 - [x] Reactions overhaul + reactor identity
@@ -429,4 +432,4 @@ Prayer request data is sensitive PII. A privacy policy and terms of service (dat
 
 ---
 
-*Last updated: Session 8. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth.*
+*Last updated: Session 8.1. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth.*
