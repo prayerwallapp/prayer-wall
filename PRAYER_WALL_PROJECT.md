@@ -80,6 +80,8 @@ Prayer Wall digitises this workflow in a way that feels alive — real people, r
 ### Multi-Tenancy
 Single codebase, single database, single deployment. Every table includes a `church_id` column. Row Level Security (RLS) policies in Supabase enforce data isolation at the database level — not just application level. A church can never access another church's data even if app-level filtering fails.
 
+**Known limitation — `reactions.user_id` cross-tenant exposure (accepted, MVP):** The `reactions` table is intentionally world-readable via the anon key so anonymous realtime reaction counts work. Session 7 added `reactions.user_id` (reactor identity), which means reactor UUIDs are now visible to any authenticated user regardless of church, and to the anon key via the REST API. A `REVOKE SELECT (user_id) ON reactions FROM anon, authenticated` was attempted but is a no-op: Supabase's table-level `GRANT SELECT ON reactions TO anon` cannot be overridden by a column-level REVOKE. The correct fix — revoke the table-level grant and re-grant column-by-column — requires a staging Supabase project to test safely, since a mistake would break live reaction counts for all churches. **Accepted for MVP**: the exposure is low-severity (random UUIDs only; the `users` table RLS prevents resolving any UUID to a name or email). Revisit when a staging environment exists.
+
 ### Routing
 Churches are identified by subdomain: `{church}.prayerwallapp.com`. Subdomain is resolved at the Next.js middleware level to look up the `church_id` and inject church context into every request. Custom domain mapping (church brings their own domain) is a future Pro feature.
 
