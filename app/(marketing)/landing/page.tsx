@@ -152,6 +152,14 @@ export default function LandingPage() {
         <p className="mt-1 text-sm text-zinc-500">
           Built for churches who care about community
         </p>
+        <div className="mt-4 flex justify-center gap-6 text-sm text-zinc-500">
+          <a href="/privacy-policy" className="underline-offset-2 hover:text-zinc-900 hover:underline">
+            Privacy Policy
+          </a>
+          <a href="/terms-of-service" className="underline-offset-2 hover:text-zinc-900 hover:underline">
+            Terms of Service
+          </a>
+        </div>
       </footer>
     </main>
   )

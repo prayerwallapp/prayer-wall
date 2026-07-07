@@ -229,6 +229,18 @@ function SignInStep({ labels }: { labels: Labels }) {
         {labels.signin_google_button}
       </button>
 
+      <p className="text-center text-xs text-zinc-400">
+        By continuing, you agree to our{' '}
+        <a href="/terms-of-service" className="underline underline-offset-2 hover:text-zinc-600">
+          Terms of Service
+        </a>{' '}
+        and{' '}
+        <a href="/privacy-policy" className="underline underline-offset-2 hover:text-zinc-600">
+          Privacy Policy
+        </a>
+        .
+      </p>
+
       {/* Dead-code-eliminated from production bundles: NODE_ENV is inlined
           at build time, so this branch never ships outside local dev. */}
       {process.env.NODE_ENV === 'development' && (

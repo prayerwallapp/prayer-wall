@@ -343,7 +343,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 ## MVP Scope — What's In
 
 - [x] Multi-tenant Next.js app with subdomain routing
-- [ ] Supabase auth (email + Google SSO) — Google OAuth configured but not yet tested end-to-end
+- [x] Supabase auth (email + Google SSO) — Google OAuth tested end-to-end (Session 8): redirect → callback → users row created with correct church_id, display_name pre-populated from Google metadata, re-sign-in matches existing row (no duplicate)
 - [x] Role-based access (member / moderator / admin)
 - [x] Submission form with optimistic local display
 - [x] Moderation inbox with approve / hold / flag actions
@@ -357,7 +357,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 - [x] Weekly email digest (Resend + React Email)
 - [ ] Keep-alive Vercel cron job — verify status
 - [x] Landing page with waitlist capture
-- [ ] Platform watermark (free tier) — verify status
+- [x] Platform watermark (free tier) — verified with real HTTP: plan=free renders watermark in RSC payload, plan=pro does not
 - [x] Personalized wall query for authenticated members (own submissions any status + others' approved/public)
 - [x] Reactions overhaul + reactor identity
 - [x] One-update-per-post limit
@@ -429,4 +429,4 @@ Prayer request data is sensitive PII. A privacy policy and terms of service (dat
 
 ---
 
-*Last updated: Session 7. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth.*
+*Last updated: Session 8. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth.*
