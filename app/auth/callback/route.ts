@@ -60,18 +60,29 @@ export async function GET(request: Request) {
         .eq('church_id', church.id)
         .maybeSingle()
 
+      // Google OAuth supplies the user's name in user_metadata; use it to
+      // pre-populate display_name so Google sign-ins can skip onboarding.
+      const googleName = (
+        (data.user.user_metadata?.full_name as string | undefined) ??
+        (data.user.user_metadata?.name as string | undefined) ??
+        ''
+      ).trim()
+
       if (!existingUser) {
         await admin.from('users').insert({
           id: data.user.id,
           church_id: church.id,
           email: data.user.email ?? '',
           role: 'member',
+          display_name: googleName || null,
         })
       }
 
       // First-time users (or anyone who never set a name) get intercepted
       // by onboarding before they can reach the wall or submit.
-      const displayName = existingUser?.display_name ?? null
+      // For Google sign-ins the name is pre-populated above, so they only
+      // hit onboarding if Google returned an empty name (edge case).
+      const displayName = (existingUser?.display_name ?? googleName) || null
       if (!displayName || displayName.trim().length === 0) {
         return NextResponse.redirect(redirectTo('/onboarding'))
       }

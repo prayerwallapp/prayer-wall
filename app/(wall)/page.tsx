@@ -93,13 +93,33 @@ export default async function WallPage({
     submissions.map((s) => s.id)
   )
 
+  const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN ?? 'prayerwallapp.com'
+  const marketingUrl = ROOT_DOMAIN.startsWith('localhost')
+    ? `http://${ROOT_DOMAIN}`
+    : `https://${ROOT_DOMAIN}`
+
   return (
-    <WallWithModal
-      church={toPublicChurch(church)}
-      labels={labels}
-      initialSubmissions={submissions}
-      initialReactionCounts={reactionCounts}
-      initialModalOpen={searchParams?.modal === 'open'}
-    />
+    <>
+      <WallWithModal
+        church={toPublicChurch(church)}
+        labels={labels}
+        initialSubmissions={submissions}
+        initialReactionCounts={reactionCounts}
+        initialModalOpen={searchParams?.modal === 'open'}
+      />
+      {church.plan === 'free' && (
+        <div className="pb-6 text-center text-xs text-zinc-400">
+          Powered by{' '}
+          <a
+            href={marketingUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 hover:text-zinc-600"
+          >
+            Prayer Wall
+          </a>
+        </div>
+      )}
+    </>
   )
 }
