@@ -3,13 +3,57 @@ import type { Config } from "tailwindcss";
 const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./components/**/*.{js,ts,jsx,tsx,mdx}",
     "./emails/**/*.{js,ts,jsx,tsx,mdx}",
+    "./lib/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
+      // All values resolve to CSS custom properties defined in app/tokens.css.
+      // Church-configurable tokens (brand, page, prayer/praise) are overridden
+      // at runtime in app/layout.tsx from the churches row.
       colors: {
-        brand: "var(--brand-color)",
-        background: "var(--background-color)",
+        page: "var(--color-bg-page)",
+        card: "var(--color-bg-card)",
+        primary: "var(--color-text-primary)",
+        secondary: "var(--color-text-secondary)",
+        muted: "var(--color-text-muted)",
+        border: "var(--color-border-default)",
+        brand: {
+          DEFAULT: "var(--color-brand-primary)",
+          on: "var(--color-brand-on-primary)",
+        },
+        prayer: {
+          DEFAULT: "var(--color-semantic-prayer)",
+          bg: "var(--color-semantic-prayer-bg)",
+          text: "var(--color-semantic-prayer-text)",
+        },
+        praise: {
+          DEFAULT: "var(--color-semantic-praise)",
+          bg: "var(--color-semantic-praise-bg)",
+          text: "var(--color-semantic-praise-text)",
+        },
+        danger: { DEFAULT: "var(--color-status-danger)", on: "var(--color-status-on-danger)" },
+        success: { DEFAULT: "var(--color-status-success)", on: "var(--color-status-on-success)" },
+        warning: { DEFAULT: "var(--color-status-warning)", on: "var(--color-status-on-warning)" },
+      },
+      spacing: {
+        xs: "var(--spacing-xs)",
+        sm: "var(--spacing-sm)",
+        md: "var(--spacing-md)",
+        lg: "var(--spacing-lg)",
+        xl: "var(--spacing-xl)",
+        "2xl": "var(--spacing-2xl)",
+      },
+      borderRadius: {
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        full: "var(--radius-full)",
+      },
+      fontFamily: {
+        display: ["var(--font-lexend)", "sans-serif"],
+        body: ["var(--font-inter)", "sans-serif"],
       },
     },
   },

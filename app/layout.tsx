@@ -1,7 +1,21 @@
 import type { Metadata } from 'next'
+import { Lexend, Inter } from 'next/font/google'
+import './tokens.css'
 import './globals.css'
 import { getChurchContext } from '@/lib/church-context'
 import { getLabels } from '@/lib/labels'
+
+const lexend = Lexend({
+  subsets: ['latin'],
+  weight: ['500', '600'],
+  variable: '--font-lexend',
+})
+
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-inter',
+})
 
 const DEFAULT_BRAND_COLOR = '#6366F1'
 const DEFAULT_BACKGROUND_COLOR = '#FAFAF9'
@@ -29,11 +43,16 @@ export default async function RootLayout({
   return (
     <html lang="en">
       <body
-        className="antialiased min-h-screen"
+        className={`${lexend.variable} ${inter.variable} antialiased min-h-screen font-body`}
         style={
           {
+            // Legacy vars — still read by inline style={} across components.
             '--brand-color': brandColor,
             '--background-color': backgroundColor,
+            // Design-system tokens (app/tokens.css) — church values override
+            // the static defaults so token-based Tailwind classes are branded.
+            '--color-brand-primary': brandColor,
+            '--color-bg-page': backgroundColor,
           } as React.CSSProperties
         }
       >
