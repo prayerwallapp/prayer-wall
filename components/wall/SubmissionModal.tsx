@@ -285,6 +285,47 @@ function SignInStep({ labels }: { labels: Labels }) {
 
 type PrayerRequestOption = { id: string; content: string; created_at: string }
 
+// Lucide-style 20px stroke icons per the design system (Icon Button page).
+function EyeOffIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" />
+      <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" />
+      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" />
+      <line x1="2" y1="2" x2="22" y2="22" />
+    </svg>
+  )
+}
+
+function ArrowUpIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <path d="M12 19V5" />
+      <path d="M5 12l7-7 7 7" />
+    </svg>
+  )
+}
+
 function SubmissionStep({
   labels,
   crisisLineText,
@@ -358,50 +399,16 @@ function SubmissionStep({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setType('prayer')}
-          className={`flex-1 rounded-md border px-3 py-2 text-body-sm font-medium ${
-            type === 'prayer'
-              ? 'border-prayer bg-prayer-bg text-prayer-text'
-              : 'border-border text-secondary hover:bg-page'
-          }`}
-        >
-          🙏 {labels.prayer}
-        </button>
-        <button
-          type="button"
-          onClick={() => setType('praise')}
-          className={`flex-1 rounded-md border px-3 py-2 text-body-sm font-medium ${
-            type === 'praise'
-              ? 'border-praise bg-praise-bg text-praise-text'
-              : 'border-border text-secondary hover:bg-page'
-          }`}
-        >
-          🙌 {labels.praise}
-        </button>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <textarea
-          required
-          minLength={1}
-          maxLength={MAX_CONTENT_LENGTH}
-          rows={5}
-          value={content}
-          onChange={(event) => setContent(event.target.value)}
-          placeholder={labels.submission_placeholder}
-          className="rounded-md border border-border px-3 py-2 text-body-sm"
-        />
-        <p
-          className={`text-right text-caption ${
-            remaining < 50 ? 'text-danger' : 'text-muted'
-          }`}
-        >
-          {remaining} {labels.char_limit_label}
-        </p>
-      </div>
+      <textarea
+        required
+        minLength={1}
+        maxLength={MAX_CONTENT_LENGTH}
+        rows={4}
+        value={content}
+        onChange={(event) => setContent(event.target.value)}
+        placeholder={labels.submission_placeholder}
+        className="w-full resize-none text-body text-primary placeholder:text-muted focus:outline-none"
+      />
 
       {/* Link praise report to a prior prayer request */}
       {type === 'praise' && priorRequests.length > 0 && (
@@ -424,14 +431,66 @@ function SubmissionStep({
         </div>
       )}
 
-      <label className="flex items-center gap-2 text-body-sm text-secondary">
-        <input
-          type="checkbox"
-          checked={isAnonymous}
-          onChange={(event) => setIsAnonymous(event.target.checked)}
-        />
-        {labels.anonymous_label}
-      </label>
+      {/* Bottom toolbar — Figma Submission Composer (node 8:7): segmented
+          type toggle left; counter (last 50 chars only), anonymous icon
+          toggle, and send right. */}
+      <div className="-mx-6 flex flex-wrap items-center justify-between gap-y-2 border-t border-border px-6 pt-4">
+        <div className="flex gap-1 rounded-full bg-page p-1">
+          <button
+            type="button"
+            onClick={() => setType('prayer')}
+            aria-pressed={type === 'prayer'}
+            className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-label font-medium ${
+              type === 'prayer' ? 'bg-prayer-bg text-prayer-text' : 'text-secondary'
+            }`}
+          >
+            {labels.prayer}
+          </button>
+          <button
+            type="button"
+            onClick={() => setType('praise')}
+            aria-pressed={type === 'praise'}
+            className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-label font-medium ${
+              type === 'praise' ? 'bg-praise-bg text-praise-text' : 'text-secondary'
+            }`}
+          >
+            {labels.praise}
+          </button>
+        </div>
+
+        <div className="ml-auto flex items-center gap-2.5">
+          {remaining <= 50 && (
+            <p
+              className={`whitespace-nowrap text-caption ${remaining < 10 ? 'text-danger' : 'text-muted'}`}
+            >
+              {remaining} {labels.char_limit_label}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsAnonymous((v) => !v)}
+            aria-pressed={isAnonymous}
+            aria-label={labels.anonymous_label}
+            title={labels.anonymous_label}
+            className={`flex h-8 w-8 items-center justify-center rounded-full ${
+              isAnonymous
+                ? 'bg-brand text-brand-on'
+                : 'border border-border text-secondary hover:bg-page'
+            }`}
+          >
+            <EyeOffIcon />
+          </button>
+          <button
+            type="submit"
+            disabled={status === 'submitting' || content.trim().length === 0}
+            aria-label={labels.submit_button}
+            title={labels.submit_button}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-card disabled:opacity-40"
+          >
+            <ArrowUpIcon />
+          </button>
+        </div>
+      </div>
 
       {/* Care team contact request */}
       <label className="flex items-start gap-2 text-caption text-secondary">
@@ -449,14 +508,6 @@ function SubmissionStep({
       {crisisLineText && (
         <p className="text-caption text-muted">{crisisLineText}</p>
       )}
-
-      <button
-        type="submit"
-        disabled={status === 'submitting' || content.trim().length === 0}
-        className="rounded-md bg-brand px-4 py-2 text-body-sm font-medium text-brand-on shadow-card disabled:opacity-60"
-      >
-        {status === 'submitting' ? 'Submitting…' : labels.submit_button}
-      </button>
     </form>
   )
 }
