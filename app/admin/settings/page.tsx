@@ -2,6 +2,7 @@ import { requireChurchContext } from '@/lib/church-context'
 import { requireRole } from '@/lib/auth'
 import { DEFAULT_LABELS, type LabelKey } from '@/lib/labels'
 import { updateChurchSettings } from './actions'
+import BrandingForm from '@/components/admin/BrandingForm'
 
 export const revalidate = 0
 
@@ -12,6 +13,16 @@ export default async function SettingsPage() {
   return (
     <div className="max-w-xl">
       <h1 className="mb-6 text-xl font-semibold text-zinc-900">Church settings</h1>
+
+      <div className="mb-6">
+        <BrandingForm
+          initialBrandColor={church.brand_color}
+          initialBgColor={church.background_color}
+          initialPrayerColor={church.prayer_color ?? null}
+          initialPraiseColor={church.praise_color ?? null}
+          initialWallDensity={church.wall_density ?? null}
+        />
+      </div>
 
       <form action={updateChurchSettings} className="flex flex-col gap-5">
         <div className="flex flex-col gap-1">
@@ -25,33 +36,6 @@ export default async function SettingsPage() {
             required
             className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
           />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1">
-            <label htmlFor="brand_color" className="text-sm font-medium text-zinc-700">
-              Brand color
-            </label>
-            <input
-              id="brand_color"
-              name="brand_color"
-              type="color"
-              defaultValue={church.brand_color}
-              className="h-10 w-full cursor-pointer rounded-md border border-zinc-300 px-1 py-1"
-            />
-          </div>
-          <div className="flex flex-col gap-1">
-            <label htmlFor="background_color" className="text-sm font-medium text-zinc-700">
-              Background color
-            </label>
-            <input
-              id="background_color"
-              name="background_color"
-              type="color"
-              defaultValue={church.background_color}
-              className="h-10 w-full cursor-pointer rounded-md border border-zinc-300 px-1 py-1"
-            />
-          </div>
         </div>
 
         <div className="flex flex-col gap-1">
