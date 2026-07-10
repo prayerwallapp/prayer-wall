@@ -14,7 +14,7 @@ export default function UpgradePrompt({ feature, description }: Props) {
       </div>
       <p className="text-body-sm text-muted">{description}</p>
       <a
-        href="mailto:josiah@santehouse.co?subject=Prayer Wall Pro upgrade"
+        href="mailto:support@prayerwallapp.com?subject=Prayer Wall Pro upgrade"
         className="w-fit rounded-full bg-brand px-5 py-[10px] text-label font-medium text-brand-on shadow-card"
       >
         Upgrade to Pro

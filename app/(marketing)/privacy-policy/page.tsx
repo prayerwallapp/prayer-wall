@@ -247,10 +247,10 @@ export default function PrivacyPolicyPage() {
             personal information, or to object to certain processing. To exercise these rights,
             contact your church admin or reach us directly at{' '}
             <a
-              href="mailto:prayerwall@santehouse.co"
+              href="mailto:support@prayerwallapp.com"
               className="underline underline-offset-2 hover:text-zinc-900"
             >
-              prayerwall@santehouse.co
+              support@prayerwallapp.com
             </a>
             .
           </p>
@@ -293,10 +293,10 @@ export default function PrivacyPolicyPage() {
           <p className="mt-4 leading-relaxed text-zinc-700">
             Questions about this policy can be sent to{' '}
             <a
-              href="mailto:prayerwall@santehouse.co"
+              href="mailto:support@prayerwallapp.com"
               className="underline underline-offset-2 hover:text-zinc-900"
             >
-              prayerwall@santehouse.co
+              support@prayerwallapp.com
             </a>
             .
           </p>

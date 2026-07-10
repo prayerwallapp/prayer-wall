@@ -248,10 +248,10 @@ export default function TermsOfServicePage() {
           <p className="mt-4 leading-relaxed text-zinc-700">
             Questions about these Terms can be sent to{' '}
             <a
-              href="mailto:prayerwall@santehouse.co"
+              href="mailto:support@prayerwallapp.com"
               className="underline underline-offset-2 hover:text-zinc-900"
             >
-              prayerwall@santehouse.co
+              support@prayerwallapp.com
             </a>
             .
           </p>
