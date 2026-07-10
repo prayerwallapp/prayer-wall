@@ -80,16 +80,16 @@ export default function ResetForm() {
   }
 
   if (sessionError) {
-    return <p className="text-sm text-red-600">{sessionError}</p>
+    return <p className="text-body-sm text-danger">{sessionError}</p>
   }
 
   if (!sessionReady) {
-    return <p className="text-sm text-zinc-500">Verifying your reset link…</p>
+    return <p className="text-body-sm text-muted">Verifying your reset link…</p>
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-      <label htmlFor="password" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="password" className="text-body-sm font-medium text-primary">
         New password
       </label>
       <input
@@ -99,10 +99,10 @@ export default function ResetForm() {
         minLength={8}
         value={password}
         onChange={(event) => setPassword(event.target.value)}
-        className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="rounded-sm border border-border px-3 py-[10px] text-body-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
       />
 
-      <label htmlFor="confirmPassword" className="text-sm font-medium text-zinc-700">
+      <label htmlFor="confirmPassword" className="text-body-sm font-medium text-primary">
         Confirm password
       </label>
       <input
@@ -112,16 +112,15 @@ export default function ResetForm() {
         minLength={8}
         value={confirmPassword}
         onChange={(event) => setConfirmPassword(event.target.value)}
-        className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="rounded-sm border border-border px-3 py-[10px] text-body-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
       />
 
-      {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
 
       <button
         type="submit"
         disabled={status === 'submitting'}
-        className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60"
-        style={{ backgroundColor: 'var(--brand-color)' }}
+        className="rounded-full bg-brand px-4 py-[10px] text-label font-medium text-brand-on shadow-card disabled:opacity-60"
       >
         {status === 'submitting' ? 'Updating…' : 'Set new password'}
       </button>

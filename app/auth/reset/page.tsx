@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
-        <h1 className="mb-6 text-center text-2xl font-semibold text-zinc-900">
+        <h1 className="mb-6 text-center font-display text-h1 font-semibold text-primary">
           Set a new password
         </h1>
         <ResetForm />
