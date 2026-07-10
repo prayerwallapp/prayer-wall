@@ -349,7 +349,7 @@ export function SubmissionsGrid({
   }, [churchId])
 
   return (
-    <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+    <div className="mx-auto grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {submissions.map(s => <SubmissionCard key={s.id} submission={s} />)}
     </div>
   )

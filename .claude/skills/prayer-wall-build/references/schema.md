@@ -29,12 +29,17 @@ CREATE TABLE churches (
 ## users
 ```sql
 CREATE TABLE users (
-  id              uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  church_id       uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
-  role            text NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'moderator', 'admin')),
-  display_name    text,
-  email           text NOT NULL,
-  created_at      timestamptz DEFAULT now()
+  id                   uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  church_id            uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
+  role                 text NOT NULL DEFAULT 'member' CHECK (role IN ('member', 'moderator', 'admin')),
+  display_name         text,
+  email                text NOT NULL,
+  created_at           timestamptz DEFAULT now(),
+  -- session3.sql
+  profile_image_url    text,
+  -- session6.sql
+  notify_prayer_email  boolean NOT NULL DEFAULT true,  -- email notification on prayer/praise reaction
+  notify_prayer_inapp  boolean NOT NULL DEFAULT true   -- in-app notification on prayer/praise reaction
 );
 ```
 
@@ -101,6 +106,42 @@ CREATE TABLE escalation_contacts (
 );
 ```
 
+## submission_updates
+```sql
+-- session6.sql — one-update-per-post content edits; update_used on submissions enforces the one-edit limit
+CREATE TABLE submission_updates (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  submission_id  uuid NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
+  church_id      uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
+  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  content        text NOT NULL,
+  created_at     timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_submission_updates_submission ON submission_updates(submission_id, created_at DESC);
+```
+
+## notifications
+```sql
+-- session6.sql — per-user notification log; increments prayer_count on repeat reactions rather than inserting new rows
+CREATE TABLE notifications (
+  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  church_id      uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
+  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  submission_id  uuid REFERENCES submissions(id) ON DELETE CASCADE,
+  type           text NOT NULL DEFAULT 'prayer' CHECK (type IN ('prayer', 'update')),
+  prayer_count   integer NOT NULL DEFAULT 1,
+  read           boolean NOT NULL DEFAULT false,
+  email_sent     boolean NOT NULL DEFAULT false,
+  created_at     timestamptz DEFAULT now(),
+  updated_at     timestamptz DEFAULT now()
+);
+
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, read) WHERE read = false;
+-- RLS: own_notifications — FOR ALL USING (user_id = auth.uid())
+-- Added to supabase_realtime publication (NotificationBell uses live subscription)
+```
+
 ## reactions
 ```sql
 CREATE TABLE reactions (
@@ -138,7 +179,8 @@ CREATE POLICY "church_isolation" ON submissions
     )
   );
 
--- Apply same pattern to keyword_rules, escalation_contacts, reactions
+-- Apply same pattern to keyword_rules, escalation_contacts, reactions, submission_updates
+-- notifications uses: FOR ALL USING (user_id = auth.uid())
 -- Service role key bypasses RLS for cron jobs and server-side admin operations
 ```
 
@@ -152,4 +194,7 @@ CREATE INDEX idx_submissions_church_created ON submissions(church_id, created_at
 CREATE INDEX idx_submissions_related ON submissions(related_submission_id);
 CREATE INDEX idx_users_church ON users(church_id);
 CREATE INDEX idx_keyword_rules_church ON keyword_rules(church_id);
+CREATE INDEX idx_reactions_user ON reactions(user_id);
+CREATE INDEX idx_submission_updates_submission ON submission_updates(submission_id, created_at DESC);
+CREATE INDEX idx_notifications_user_unread ON notifications(user_id, read) WHERE read = false;
 ```
