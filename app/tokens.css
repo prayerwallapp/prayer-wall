@@ -23,6 +23,7 @@
   --amber-100: #FAC775;
   --amber-600: #854F0B;
   --amber-800: #633806;
+  --red-50: #FEF2F2;
   --red-600: #DC2626;
   --blue-600: #2563EB;
 
@@ -51,12 +52,22 @@
   --color-text-secondary: var(--gray-400);
   --color-text-muted: var(--gray-300);
   --color-border-default: var(--gray-100);
+  /* Status — full-saturation (action buttons, icon tints) */
   --color-status-danger: var(--red-600);
   --color-status-on-danger: var(--gray-white);
   --color-status-success: var(--teal-600);
   --color-status-on-success: var(--gray-white);
   --color-status-warning: var(--amber-600);
   --color-status-on-warning: var(--gray-white);
+  /* Status — tinted bg + computed text (badges, alert banners).
+     Text values computed via contrast.ts: all three light tints
+     (~L=0.88–0.91) give black text at ≥18.5:1, well above WCAG AA. */
+  --color-status-success-bg: var(--teal-50);    /* #E1F5EE → black 18.66:1 */
+  --color-status-success-text: #000000;
+  --color-status-warning-bg: var(--amber-50);   /* #FAEEDA → black 18.53:1 */
+  --color-status-warning-text: #000000;
+  --color-status-danger-bg: var(--red-50);      /* #FEF2F2 → black 19.10:1 */
+  --color-status-danger-text: #000000;
 
   /* ---- Semantic colors: CHURCH-CONFIGURABLE ----
      These six are defaults only. At runtime, the church-context layer

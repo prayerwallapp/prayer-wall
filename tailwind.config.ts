@@ -33,9 +33,24 @@ const config: Config = {
           bg: "var(--color-semantic-praise-bg)",
           text: "var(--color-semantic-praise-text)",
         },
-        danger: { DEFAULT: "var(--color-status-danger)", on: "var(--color-status-on-danger)" },
-        success: { DEFAULT: "var(--color-status-success)", on: "var(--color-status-on-success)" },
-        warning: { DEFAULT: "var(--color-status-warning)", on: "var(--color-status-on-warning)" },
+        danger: {
+          DEFAULT: "var(--color-status-danger)",
+          on: "var(--color-status-on-danger)",
+          bg: "var(--color-status-danger-bg)",
+          text: "var(--color-status-danger-text)",
+        },
+        success: {
+          DEFAULT: "var(--color-status-success)",
+          on: "var(--color-status-on-success)",
+          bg: "var(--color-status-success-bg)",
+          text: "var(--color-status-success-text)",
+        },
+        warning: {
+          DEFAULT: "var(--color-status-warning)",
+          on: "var(--color-status-on-warning)",
+          bg: "var(--color-status-warning-bg)",
+          text: "var(--color-status-warning-text)",
+        },
       },
       spacing: {
         xs: "var(--spacing-xs)",
