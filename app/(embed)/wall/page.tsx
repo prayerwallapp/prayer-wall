@@ -30,18 +30,11 @@ export default async function EmbedWallPage() {
   const submitUrl = `${protocol}://${church.subdomain}.${rootDomain}/submit`
 
   return (
-    <div
-      className="min-h-screen p-4 bg-[var(--background-color)]"
-      style={
-        {
-          '--brand-color': church.brand_color,
-          '--background-color': church.background_color,
-        } as React.CSSProperties
-      }
-    >
+    <div className="min-h-screen bg-page p-4">
       <SubmissionsGrid
         initialSubmissions={(submissions ?? []) as unknown as SubmissionWithAuthor[]}
         churchId={church.id}
+        labels={labels}
       />
 
       <div className="mt-6 text-center">
@@ -49,7 +42,7 @@ export default async function EmbedWallPage() {
           href={submitUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block rounded-md px-6 py-3 text-sm font-medium text-white bg-[var(--brand-color)]"
+          className="inline-block rounded-full bg-brand px-6 py-[10px] text-label font-medium text-brand-on shadow-card"
         >
           {labels.submit_button}
         </a>
