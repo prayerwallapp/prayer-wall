@@ -35,4 +35,8 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .env.local.save
-.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/prayer-wall-build/
+!.claude/skills/prayer-wall-build/references/
+!.claude/skills/prayer-wall-build/references/**
