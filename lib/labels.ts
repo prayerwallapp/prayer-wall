@@ -25,6 +25,9 @@ export const DEFAULT_LABELS = {
   updates_count_label: 'updates',
   add_update_label: 'Add update',
   answered_badge_label: 'Answered prayer',
+  care_team_label: "I'd like someone from the care team to reach out to me directly",
+  answered_prayer_label: 'Which prayer was answered? (optional)',
+  answered_prayer_none: '— No link —',
 } as const
 
 export type LabelKey = keyof typeof DEFAULT_LABELS

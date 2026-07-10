@@ -103,7 +103,7 @@ export default function SubmissionModal({ labels, state, onStateChange, onClose,
             type="button"
             onClick={close}
             aria-label="Close"
-            className="rounded-md p-1 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600"
+            className="rounded-md p-1 text-muted hover:bg-page hover:text-secondary"
           >
             ✕
           </button>
@@ -190,10 +190,10 @@ function SignInStep({ labels }: { labels: Labels }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <h2 className="text-xl font-semibold text-zinc-900">{labels.signin_heading}</h2>
+      <h2 className="font-display text-h1 font-semibold text-primary">{labels.signin_heading}</h2>
 
       {status === 'sent' ? (
-        <p className="text-sm text-zinc-600">{labels.signin_magic_sent}</p>
+        <p className="text-body-sm text-secondary">{labels.signin_magic_sent}</p>
       ) : (
         <form onSubmit={handleMagicLink} className="flex flex-col gap-3">
           <input
@@ -202,13 +202,13 @@ function SignInStep({ labels }: { labels: Labels }) {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             placeholder={labels.signin_email_placeholder}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+            className="rounded-md border border-border px-3 py-2 text-body-sm"
           />
-          {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
+          {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
           <button
             type="submit"
             disabled={status === 'sending'}
-            className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60 bg-[var(--brand-color)]"
+            className="rounded-md bg-brand px-4 py-2 text-body-sm font-medium text-brand-on shadow-card disabled:opacity-60"
           >
             {status === 'sending' ? 'Sending…' : labels.signin_email_button}
           </button>
@@ -216,26 +216,26 @@ function SignInStep({ labels }: { labels: Labels }) {
       )}
 
       <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-zinc-200" />
-        <span className="text-xs uppercase tracking-wide text-zinc-400">or</span>
-        <div className="h-px flex-1 bg-zinc-200" />
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-caption uppercase tracking-wide text-muted">or</span>
+        <div className="h-px flex-1 bg-border" />
       </div>
 
       <button
         type="button"
         onClick={handleGoogle}
-        className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        className="rounded-md border border-border px-4 py-2 text-body-sm font-medium text-secondary hover:bg-page"
       >
         {labels.signin_google_button}
       </button>
 
-      <p className="text-center text-xs text-zinc-400">
+      <p className="text-center text-caption text-muted">
         By continuing, you agree to our{' '}
-        <a href="/terms-of-service" className="underline underline-offset-2 hover:text-zinc-600">
+        <a href="/terms-of-service" className="underline underline-offset-2 hover:text-secondary">
           Terms of Service
         </a>{' '}
         and{' '}
-        <a href="/privacy-policy" className="underline underline-offset-2 hover:text-zinc-600">
+        <a href="/privacy-policy" className="underline underline-offset-2 hover:text-secondary">
           Privacy Policy
         </a>
         .
@@ -362,10 +362,10 @@ function SubmissionStep({
         <button
           type="button"
           onClick={() => setType('prayer')}
-          className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+          className={`flex-1 rounded-md border px-3 py-2 text-body-sm font-medium ${
             type === 'prayer'
-              ? 'border-transparent text-white bg-[var(--brand-color)]'
-              : 'border-zinc-300 text-zinc-700'
+              ? 'border-prayer bg-prayer-bg text-prayer-text'
+              : 'border-border text-secondary hover:bg-page'
           }`}
         >
           🙏 {labels.prayer}
@@ -373,10 +373,10 @@ function SubmissionStep({
         <button
           type="button"
           onClick={() => setType('praise')}
-          className={`flex-1 rounded-md border px-3 py-2 text-sm font-medium ${
+          className={`flex-1 rounded-md border px-3 py-2 text-body-sm font-medium ${
             type === 'praise'
-              ? 'border-transparent text-white bg-[var(--brand-color)]'
-              : 'border-zinc-300 text-zinc-700'
+              ? 'border-praise bg-praise-bg text-praise-text'
+              : 'border-border text-secondary hover:bg-page'
           }`}
         >
           🙌 {labels.praise}
@@ -392,49 +392,29 @@ function SubmissionStep({
           value={content}
           onChange={(event) => setContent(event.target.value)}
           placeholder={labels.submission_placeholder}
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+          className="rounded-md border border-border px-3 py-2 text-body-sm"
         />
         <p
-          className={`text-right text-xs ${
-            remaining < 50 ? 'text-red-600' : 'text-zinc-400'
+          className={`text-right text-caption ${
+            remaining < 50 ? 'text-danger' : 'text-muted'
           }`}
         >
           {remaining} {labels.char_limit_label}
         </p>
       </div>
 
-      <label className="flex items-center gap-2 text-sm text-zinc-600">
-        <input
-          type="checkbox"
-          checked={isAnonymous}
-          onChange={(event) => setIsAnonymous(event.target.checked)}
-        />
-        {labels.anonymous_label}
-      </label>
-
-      {/* Care team contact request */}
-      <label className="flex items-start gap-2 text-sm text-zinc-600">
-        <input
-          type="checkbox"
-          checked={contactRequested}
-          onChange={(event) => setContactRequested(event.target.checked)}
-          className="mt-0.5"
-        />
-        I&rsquo;d like someone from the care team to reach out to me directly
-      </label>
-
       {/* Link praise report to a prior prayer request */}
       {type === 'praise' && priorRequests.length > 0 && (
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-medium text-zinc-500">
-            Link to a prayer request this praise answers (optional)
+          <label className="text-caption font-medium text-secondary">
+            {labels.answered_prayer_label}
           </label>
           <select
             value={relatedSubmissionId ?? ''}
             onChange={(e) => setRelatedSubmissionId(e.target.value || null)}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm text-zinc-700"
+            className="rounded-md border border-border px-3 py-2 text-body-sm text-primary"
           >
-            <option value="">— No link —</option>
+            <option value="">{labels.answered_prayer_none}</option>
             {priorRequests.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.content.slice(0, 60)}{r.content.length > 60 ? '…' : ''}
@@ -444,16 +424,36 @@ function SubmissionStep({
         </div>
       )}
 
-      {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
+      <label className="flex items-center gap-2 text-body-sm text-secondary">
+        <input
+          type="checkbox"
+          checked={isAnonymous}
+          onChange={(event) => setIsAnonymous(event.target.checked)}
+        />
+        {labels.anonymous_label}
+      </label>
+
+      {/* Care team contact request */}
+      <label className="flex items-start gap-2 text-caption text-secondary">
+        <input
+          type="checkbox"
+          checked={contactRequested}
+          onChange={(event) => setContactRequested(event.target.checked)}
+          className="mt-0.5"
+        />
+        {labels.care_team_label}
+      </label>
+
+      {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
 
       {crisisLineText && (
-        <p className="text-xs text-zinc-400">{crisisLineText}</p>
+        <p className="text-caption text-muted">{crisisLineText}</p>
       )}
 
       <button
         type="submit"
         disabled={status === 'submitting' || content.trim().length === 0}
-        className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60 bg-[var(--brand-color)]"
+        className="rounded-md bg-brand px-4 py-2 text-body-sm font-medium text-brand-on shadow-card disabled:opacity-60"
       >
         {status === 'submitting' ? 'Submitting…' : labels.submit_button}
       </button>
@@ -472,20 +472,20 @@ function SuccessStep({
 }) {
   return (
     <div className="flex flex-col items-center gap-3 py-4 text-center">
-      <h2 className="text-xl font-semibold text-zinc-900">{labels.success_heading}</h2>
-      <p className="text-sm text-zinc-500">{labels.success_subheading}</p>
+      <h2 className="font-display text-h1 font-semibold text-primary">{labels.success_heading}</h2>
+      <p className="text-body-sm text-secondary">{labels.success_subheading}</p>
       <div className="mt-4 flex gap-3">
         <button
           type="button"
           onClick={onAnother}
-          className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          className="rounded-md border border-border px-4 py-2 text-body-sm font-medium text-secondary hover:bg-page"
         >
           {labels.success_another}
         </button>
         <button
           type="button"
           onClick={onReturn}
-          className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm bg-[var(--brand-color)]"
+          className="rounded-md bg-brand px-4 py-2 text-body-sm font-medium text-brand-on shadow-card"
         >
           {labels.success_return}
         </button>
