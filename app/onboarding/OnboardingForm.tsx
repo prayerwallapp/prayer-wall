@@ -42,13 +42,13 @@ export default function OnboardingForm({ labels }: { labels: Labels }) {
         onChange={(event) => setName(event.target.value)}
         placeholder={labels.onboarding_placeholder}
         autoFocus
-        className="rounded-md border border-zinc-300 px-3 py-2 text-sm"
+        className="w-full rounded-sm border border-border px-3 py-[10px] text-body-sm text-primary focus:border-brand focus:outline-none focus:ring-1 focus:ring-brand"
       />
-      {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
       <button
         type="submit"
         disabled={status === 'submitting' || name.trim().length === 0}
-        className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm disabled:opacity-60 bg-[var(--brand-color)]"
+        className="rounded-full bg-brand px-5 py-[10px] text-label font-medium text-brand-on shadow-card disabled:opacity-60"
       >
         {status === 'submitting' ? 'Saving…' : labels.onboarding_button}
       </button>

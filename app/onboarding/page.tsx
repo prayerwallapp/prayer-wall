@@ -28,10 +28,10 @@ export default async function OnboardingPage() {
             className="mx-auto mb-6 h-14 w-14 rounded object-contain"
           />
         )}
-        <h1 className="text-2xl font-semibold text-zinc-900">
+        <h1 className="font-display text-h2 font-medium text-primary">
           {labels.onboarding_heading}
         </h1>
-        <p className="mt-2 text-sm text-zinc-500">{labels.onboarding_subheading}</p>
+        <p className="mt-2 text-body-sm text-muted">{labels.onboarding_subheading}</p>
         <OnboardingForm labels={labels} />
       </div>
     </main>
