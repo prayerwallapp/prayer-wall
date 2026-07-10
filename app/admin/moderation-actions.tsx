@@ -30,26 +30,26 @@ export default function ModerationActions({ submissionId }: { submissionId: stri
   return (
     <div className="flex flex-wrap items-start gap-2">
       {showApproveOptions ? (
-        <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-2">
-          <span className="text-xs font-medium text-emerald-700">Approve as:</span>
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-success-bg p-2">
+          <span className="text-caption font-medium text-success-text">Approve as:</span>
           <button
             onClick={() => act('approve', 'public')}
             disabled={pending !== null}
-            className="rounded-md bg-emerald-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+            className="rounded-full bg-success px-3 py-1 text-caption font-medium text-success-on disabled:opacity-60"
           >
             {pending === 'approve' ? 'Approving…' : '🌐 Public'}
           </button>
           <button
             onClick={() => act('approve', 'private')}
             disabled={pending !== null}
-            className="rounded-md bg-zinc-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-60"
+            className="rounded-full bg-success px-3 py-1 text-caption font-medium text-success-on disabled:opacity-60"
           >
             {pending === 'approve' ? 'Approving…' : '🔒 Care team only'}
           </button>
           <button
             onClick={() => setShowApproveOptions(false)}
             disabled={pending !== null}
-            className="rounded-md border border-zinc-300 px-3 py-1 text-xs font-medium text-zinc-600 disabled:opacity-60"
+            className="rounded-full border border-border px-3 py-1 text-caption font-medium text-secondary disabled:opacity-60"
           >
             Cancel
           </button>
@@ -58,7 +58,7 @@ export default function ModerationActions({ submissionId }: { submissionId: stri
         <button
           onClick={() => setShowApproveOptions(true)}
           disabled={pending !== null}
-          className="rounded-md bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+          className="rounded-full bg-success px-3 py-1.5 text-body-sm font-medium text-success-on disabled:opacity-60"
         >
           Approve
         </button>
@@ -67,14 +67,14 @@ export default function ModerationActions({ submissionId }: { submissionId: stri
       <button
         onClick={() => act('hold')}
         disabled={pending !== null}
-        className="rounded-md bg-amber-500 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+        className="rounded-full bg-warning px-3 py-1.5 text-body-sm font-medium text-warning-on disabled:opacity-60"
       >
         {pending === 'hold' ? 'Holding…' : 'Hold'}
       </button>
       <button
         onClick={() => act('reject')}
         disabled={pending !== null}
-        className="rounded-md bg-red-600 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60"
+        className="rounded-full bg-danger px-3 py-1.5 text-body-sm font-medium text-danger-on disabled:opacity-60"
       >
         {pending === 'reject' ? 'Rejecting…' : 'Reject'}
       </button>

@@ -21,7 +21,7 @@ export default function StatusTabs({ active, counts }: Props) {
   const router = useRouter()
 
   return (
-    <div className="mb-6 flex gap-1 border-b border-zinc-200">
+    <div className="mb-6 flex gap-1 border-b border-border">
       {TABS.map((tab) => {
         const isActive = tab.status === active
         return (
@@ -29,20 +29,13 @@ export default function StatusTabs({ active, counts }: Props) {
             key={tab.status}
             type="button"
             onClick={() => router.push(`/admin?status=${tab.status}`)}
-            className={`-mb-px flex items-center gap-2 px-4 py-2 text-sm font-medium ${
+            className={`-mb-px px-4 py-2 text-body-sm font-medium ${
               isActive
-                ? 'border-b-2 border-[var(--brand-color)] text-[var(--brand-color)]'
-                : 'border-b-2 border-transparent text-zinc-500 hover:text-zinc-700'
+                ? 'border-b-2 border-primary text-primary'
+                : 'border-b-2 border-transparent text-muted hover:text-secondary'
             }`}
           >
-            {tab.label}
-            <span
-              className={`rounded-full px-1.5 py-0.5 text-xs ${
-                isActive ? 'bg-zinc-100 text-zinc-700' : 'bg-zinc-100 text-zinc-500'
-              }`}
-            >
-              {counts[tab.status]}
-            </span>
+            {tab.label} ({counts[tab.status]})
           </button>
         )
       })}

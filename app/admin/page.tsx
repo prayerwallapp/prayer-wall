@@ -106,12 +106,12 @@ export default async function AdminInboxPage({
 
   return (
     <div>
-      <h1 className="mb-6 text-xl font-semibold text-zinc-900">Moderation inbox</h1>
+      <h1 className="mb-6 font-display text-h1 font-semibold text-primary">Moderation inbox</h1>
 
       <StatusTabs active={activeTab} counts={counts} />
 
       {items.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-body-sm text-muted">
           {activeTab === 'pending'
             ? 'Nothing waiting for review.'
             : 'No submissions here.'}
@@ -121,66 +121,71 @@ export default async function AdminInboxPage({
           {items.map((submission) => (
             <div
               key={submission.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
+              className="flex overflow-hidden rounded-lg border border-border bg-card shadow-card"
             >
-              <div className="mb-2 flex items-center justify-between">
-                <div className="flex flex-wrap items-center gap-1.5">
-                  <span className="text-xs font-medium uppercase tracking-wide text-zinc-400">
-                    {submission.type === 'prayer' ? labels.prayer : labels.praise}
-                    {activeTab === 'all' && ` · ${submission.status}`}
-                    {submission.is_anonymous && ` · ${labels.anonymous_label}`}
+              <div
+                className={`w-1 shrink-0 ${submission.type === 'prayer' ? 'bg-prayer' : 'bg-praise'}`}
+              />
+              <div className="flex-1 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="text-caption font-medium uppercase tracking-widest text-muted">
+                      {submission.type === 'prayer' ? labels.prayer : labels.praise}
+                      {activeTab === 'all' && ` · ${submission.status}`}
+                      {submission.is_anonymous && ` · ${labels.anonymous_label}`}
+                    </span>
+                    {submission.priority === 'urgent' && (
+                      <span className="rounded-full bg-danger-bg px-2 py-0.5 text-caption font-semibold text-danger-text">
+                        🔴 Urgent
+                      </span>
+                    )}
+                    {submission.visibility === 'private' && (
+                      <span className="rounded-full bg-page px-2 py-0.5 text-caption font-medium text-secondary">
+                        🔒 Private
+                      </span>
+                    )}
+                    {submission.contact_requested && (
+                      <span className="rounded-full bg-warning-bg px-2 py-0.5 text-caption font-semibold text-warning-text">
+                        📞 Requested contact
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-caption text-muted">
+                    {new Date(submission.created_at).toLocaleString()}
                   </span>
-                  {submission.priority === 'urgent' && (
-                    <span className="rounded-full bg-red-100 px-2 py-0.5 text-xs font-semibold text-red-700">
-                      🔴 Urgent
-                    </span>
+                </div>
+                <p className="mb-3 text-body-sm text-primary">{submission.content}</p>
+                {reactionCounts[submission.id] && (
+                  <p className="mb-3 flex gap-3 text-caption text-muted">
+                    {REACTION_GLYPHS.filter(
+                      ({ emoji }) => reactionCounts[submission.id][emoji] > 0
+                    ).map(({ emoji, glyph }) => (
+                      <span key={emoji}>
+                        {glyph} {reactionCounts[submission.id][emoji]}
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {submission.flagged_reason && (
+                  <p className="mb-3 text-caption text-warning">
+                    Flagged: {submission.flagged_reason}
+                  </p>
+                )}
+                {submission.status !== 'pending' && submission.moderated_by_user?.display_name && (
+                  <p className="mb-3 text-caption text-muted">
+                    Moderated by {submission.moderated_by_user.display_name}
+                    {submission.moderated_at &&
+                      ` · ${new Date(submission.moderated_at).toLocaleString()}`}
+                  </p>
+                )}
+                <div className="flex items-center gap-2">
+                  {(submission.status === 'pending' || submission.status === 'held') && (
+                    <ModerationActions submissionId={submission.id} />
                   )}
-                  {submission.visibility === 'private' && (
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-600">
-                      🔒 Private
-                    </span>
-                  )}
-                  {submission.contact_requested && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-700">
-                      📞 Requested contact
-                    </span>
+                  {submission.status !== 'pending' && (
+                    <RequeueButton submissionId={submission.id} />
                   )}
                 </div>
-                <span className="text-xs text-zinc-400">
-                  {new Date(submission.created_at).toLocaleString()}
-                </span>
-              </div>
-              <p className="mb-3 text-sm text-zinc-800">{submission.content}</p>
-              {reactionCounts[submission.id] && (
-                <p className="mb-3 flex gap-3 text-sm text-gray-400">
-                  {REACTION_GLYPHS.filter(
-                    ({ emoji }) => reactionCounts[submission.id][emoji] > 0
-                  ).map(({ emoji, glyph }) => (
-                    <span key={emoji}>
-                      {glyph} {reactionCounts[submission.id][emoji]}
-                    </span>
-                  ))}
-                </p>
-              )}
-              {submission.flagged_reason && (
-                <p className="mb-3 text-xs text-amber-700">
-                  Flagged: {submission.flagged_reason}
-                </p>
-              )}
-              {submission.status !== 'pending' && submission.moderated_by_user?.display_name && (
-                <p className="mb-3 text-xs text-zinc-400">
-                  Moderated by {submission.moderated_by_user.display_name}
-                  {submission.moderated_at &&
-                    ` · ${new Date(submission.moderated_at).toLocaleString()}`}
-                </p>
-              )}
-              <div className="flex items-center gap-2">
-                {(submission.status === 'pending' || submission.status === 'held') && (
-                  <ModerationActions submissionId={submission.id} />
-                )}
-                {submission.status !== 'pending' && (
-                  <RequeueButton submissionId={submission.id} />
-                )}
               </div>
             </div>
           ))}

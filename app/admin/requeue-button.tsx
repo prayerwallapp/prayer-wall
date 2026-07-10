@@ -25,7 +25,7 @@ export default function RequeueButton({ submissionId }: { submissionId: string }
     <button
       onClick={requeue}
       disabled={pending}
-      className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-60"
+      className="rounded-full border border-border px-3 py-1.5 text-body-sm font-medium text-secondary hover:bg-page disabled:opacity-60"
     >
       {pending ? 'Requeueing…' : 'Requeue'}
     </button>
