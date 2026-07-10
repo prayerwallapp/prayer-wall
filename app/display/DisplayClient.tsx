@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import type { ChurchPublic } from '@/lib/church-context'
 import type { Labels } from '@/lib/labels'
 import type { SubmissionRow, SubmissionWithAuthor } from '@/lib/supabase/types'
+import SubmissionCard from '@/components/wall/SubmissionCard'
 
 const FOUR_HOURS_MS = 4 * 60 * 60 * 1000
 // Past this many cards the grid overflows a 1080p screen, so the slow
@@ -29,16 +30,6 @@ function Clock() {
       {now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
     </span>
   )
-}
-
-function getAuthorName(
-  submission: SubmissionWithAuthor,
-  church: ChurchPublic,
-  labels: Labels
-): string {
-  if (submission.is_anonymous) return labels.anonymous_label
-  if (church.hide_member_names) return labels.member_label
-  return submission.users?.display_name ?? labels.member_label
 }
 
 export default function DisplayClient({
@@ -105,18 +96,13 @@ export default function DisplayClient({
   const grid = (
     <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
       {submissions.map((submission, index) => (
-        <article
+        <SubmissionCard
           key={shouldAutoScroll ? `${submission.id}-${index}` : submission.id}
-          className="rounded-xl bg-white/90 p-8 shadow-lg backdrop-blur"
-        >
-          <span className="inline-block rounded-full px-3 py-1 text-sm font-medium text-white bg-[var(--brand-color)]">
-            {submission.type === 'prayer' ? labels.prayer : labels.praise}
-          </span>
-          <p className="mt-4 text-2xl leading-snug text-zinc-800">{submission.content}</p>
-          <p className="mt-5 text-base text-zinc-400">
-            {getAuthorName(submission, church, labels)}
-          </p>
-        </article>
+          submission={submission}
+          church={church}
+          labels={labels}
+          size="display"
+        />
       ))}
     </div>
   )

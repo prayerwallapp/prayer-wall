@@ -21,6 +21,10 @@ export const DEFAULT_LABELS = {
   success_another: 'Submit another',
   success_return: 'Return to wall',
   char_limit_label: 'characters remaining',
+  updates_label: 'Updates',
+  updates_count_label: 'updates',
+  add_update_label: 'Add update',
+  answered_badge_label: 'Answered prayer',
 } as const
 
 export type LabelKey = keyof typeof DEFAULT_LABELS

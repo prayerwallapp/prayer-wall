@@ -40,6 +40,10 @@
   --radius-lg: 20px;
   --radius-full: 999px;
 
+  /* ---- Shadows (Figma effect styles Shadow/Card, Shadow/Modal) ---- */
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-modal: 0 8px 24px rgba(0, 0, 0, 0.12);
+
   /* ---- Semantic colors: fixed (not church-configurable) ---- */
   --color-bg-page: var(--gray-0);
   --color-bg-card: var(--gray-white);

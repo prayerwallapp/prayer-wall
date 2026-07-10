@@ -10,13 +10,18 @@ import type {
   SubmissionWithAuthor,
 } from '@/lib/supabase/types'
 
+export type CardSize = 'default' | 'compact' | 'display'
+
 type Props = {
   submission: SubmissionWithAuthor
   church: ChurchPublic
   labels: Labels
-  reactions: ReactionCounts
-  onReact: (submissionId: string, emoji: ReactionEmoji) => void
-  currentUserId: string | null
+  size?: CardSize
+  // Interaction props are optional so the zero-interaction `display` size
+  // (and any read-only surface) can omit them entirely.
+  reactions?: ReactionCounts
+  onReact?: (submissionId: string, emoji: ReactionEmoji) => void
+  currentUserId?: string | null
 }
 
 const EMOJI_GLYPHS: Record<ReactionEmoji, string> = {
@@ -26,6 +31,49 @@ const EMOJI_GLYPHS: Record<ReactionEmoji, string> = {
 }
 
 const REACTION_ORDER: ReactionEmoji[] = ['prayer', 'praise', 'heart']
+
+const EMPTY_COUNTS: ReactionCounts = { prayer: 0, praise: 0, heart: 0 }
+
+// Per-size styling from the Figma Post Card component set. The 10px/28px
+// paddings and 3/4/8px accent-bar widths are intentional per-size design
+// decisions (see docs/figma-design-system-rules.md §7.5) — do not snap
+// them to the spacing scale.
+const SIZE_STYLES: Record<
+  CardSize,
+  {
+    root: string
+    bar: string
+    body: string
+    header: string
+    avatar: string
+    content: string
+  }
+> = {
+  default: {
+    root: 'rounded-md border border-border shadow-card',
+    bar: 'w-[4px]',
+    body: 'gap-[12px] p-md',
+    header: 'gap-sm',
+    avatar: 'h-8 w-8 text-caption',
+    content: 'text-body text-primary',
+  },
+  compact: {
+    root: 'rounded-md border border-border shadow-card',
+    bar: 'w-[3px]',
+    body: 'gap-sm p-[10px]',
+    header: 'gap-[6px]',
+    avatar: 'h-[22px] w-[22px] text-[10px]',
+    content: 'text-body-sm text-primary',
+  },
+  display: {
+    root: 'rounded-lg shadow-modal',
+    bar: 'w-[8px]',
+    body: 'gap-md p-[28px]',
+    header: 'gap-[12px]',
+    avatar: 'h-12 w-12 text-label font-medium',
+    content: 'font-display text-h1 font-semibold text-primary',
+  },
+}
 
 type Burst = {
   id: number
@@ -46,14 +94,43 @@ function getAuthorName(
   return submission.users?.display_name ?? labels.member_label
 }
 
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+}
+
+// Locale-driven so no English strings are hardcoded here.
+function formatRelativeTime(iso: string, now: number): string {
+  const formatter = new Intl.RelativeTimeFormat(undefined, { style: 'narrow' })
+  const minutes = Math.round((new Date(iso).getTime() - now) / 60_000)
+  if (minutes > -60) return formatter.format(Math.min(minutes, -1), 'minute')
+  const hours = Math.round(minutes / 60)
+  if (hours > -24) return formatter.format(hours, 'hour')
+  return formatter.format(Math.round(hours / 24), 'day')
+}
+
+function AnsweredBadge({ labels }: { labels: Labels }) {
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-prayer-bg px-2 py-0.5 text-caption font-medium text-prayer-text">
+      ✓ {labels.answered_badge_label}
+    </span>
+  )
+}
+
 function UpdatesThread({
   submissionId,
   currentUserId,
   isOwner,
+  onCountChange,
 }: {
   submissionId: string
   currentUserId: string | null
   isOwner: boolean
+  onCountChange: (count: number) => void
 }) {
   const [updates, setUpdates] = useState<SubmissionUpdateRow[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -69,10 +146,13 @@ function UpdatesThread({
       .then((r) => r.json())
       .then(({ updates: data }) => {
         setUpdates(data ?? [])
+        onCountChange(data?.length ?? 0)
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
       .finally(() => setLoading(false))
+    // onCountChange is a state setter from the parent; stable across renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submissionId, loaded])
 
   async function handlePost(event: React.FormEvent<HTMLFormElement>) {
@@ -96,20 +176,21 @@ function UpdatesThread({
 
     const { update } = await response.json()
     setUpdates((prev) => [...prev, update])
+    onCountChange(updates.length + 1)
     setNewContent('')
     setPosting(false)
   }
 
   return (
-    <div className="mt-3 border-t border-zinc-100 pt-3">
-      {loading && <p className="text-xs text-zinc-400">Loading updates…</p>}
+    <div className="mt-3 border-t border-border pt-3">
+      {loading && <p className="text-caption text-muted">Loading updates…</p>}
 
       {loaded && updates.length > 0 && (
         <div className="mb-2 flex flex-col gap-2">
           {updates.map((u) => (
-            <div key={u.id} className="rounded-md bg-zinc-50 px-3 py-2">
-              <p className="text-xs text-zinc-700">{u.content}</p>
-              <p className="mt-0.5 text-xs text-zinc-400">
+            <div key={u.id} className="rounded-sm bg-page px-3 py-2">
+              <p className="text-caption text-primary">{u.content}</p>
+              <p className="mt-0.5 text-caption text-muted">
                 {new Date(u.created_at).toLocaleDateString()}
               </p>
             </div>
@@ -118,7 +199,7 @@ function UpdatesThread({
       )}
 
       {loaded && updates.length === 0 && !isOwner && (
-        <p className="text-xs text-zinc-400">No updates yet.</p>
+        <p className="text-caption text-muted">No updates yet.</p>
       )}
 
       {isOwner && currentUserId && (
@@ -129,13 +210,13 @@ function UpdatesThread({
             maxLength={300}
             rows={2}
             placeholder="Share an update…"
-            className="rounded-md border border-zinc-200 px-2 py-1.5 text-xs"
+            className="rounded-sm border border-border px-2 py-1.5 text-caption"
           />
-          {postError && <p className="text-xs text-red-600">{postError}</p>}
+          {postError && <p className="text-caption text-danger">{postError}</p>}
           <button
             type="submit"
             disabled={posting || !newContent.trim()}
-            className="self-start rounded-md px-3 py-1 text-xs font-medium text-white disabled:opacity-60 bg-[var(--brand-color)]"
+            className="self-start rounded-sm bg-brand px-3 py-1 text-caption font-medium text-brand-on disabled:opacity-60"
           >
             {posting ? 'Posting…' : 'Post update'}
           </button>
@@ -149,13 +230,18 @@ export default function SubmissionCard({
   submission,
   church,
   labels,
-  reactions,
+  size = 'default',
+  reactions = EMPTY_COUNTS,
   onReact,
-  currentUserId,
+  currentUserId = null,
 }: Props) {
   const [reacted, setReacted] = useState<ReactionEmoji[]>([])
   const [bursts, setBursts] = useState<Burst[]>([])
   const [showUpdates, setShowUpdates] = useState(false)
+  const [updatesCount, setUpdatesCount] = useState<number | null>(null)
+  // Timestamp renders only after mount — Date.now() on the server would
+  // cause a hydration mismatch (same pattern as Clock in DisplayClient).
+  const [now, setNow] = useState<number | null>(null)
   const buttonRefs = useRef<Partial<Record<ReactionEmoji, HTMLButtonElement | null>>>({})
   const burstId = useRef(0)
   const activeBurstCount = useRef(0)
@@ -163,6 +249,15 @@ export default function SubmissionCard({
 
   const MAX_ACTIVE_BURSTS = 8
   const isOwner = !!currentUserId && currentUserId === submission.user_id
+  const isDisplay = size === 'display'
+  const styles = SIZE_STYLES[size]
+  const authorName = getAuthorName(submission, church, labels)
+  const isAnswered =
+    submission.type === 'praise' && !!submission.related_submission_id
+
+  useEffect(() => {
+    setNow(Date.now())
+  }, [])
 
   useEffect(() => {
     try {
@@ -209,7 +304,7 @@ export default function SubmissionCard({
     if (activeBurstCount.current >= MAX_ACTIVE_BURSTS) return
 
     spawnBurst(emoji)
-    onReact(submission.id, emoji)
+    onReact?.(submission.id, emoji)
 
     if (!reacted.includes(emoji)) {
       const next = [...reacted, emoji]
@@ -222,66 +317,117 @@ export default function SubmissionCard({
     }
   }
 
+  const updatesLink = isOwner
+    ? labels.add_update_label
+    : updatesCount === null
+      ? labels.updates_label
+      : `${updatesCount} ${labels.updates_count_label}`
+
   return (
-    <article className="rounded-lg border border-zinc-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="inline-block rounded-full px-2.5 py-0.5 text-xs font-medium text-white bg-[var(--brand-color)]">
-          {submission.type === 'prayer' ? labels.prayer : labels.praise}
-        </span>
-        {submission.type === 'praise' && submission.related_submission_id && (
-          <span className="inline-block rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
-            ✓ Answered prayer
-          </span>
-        )}
-      </div>
-      <p className="mt-3 whitespace-pre-wrap text-sm text-zinc-800">{submission.content}</p>
-      <p className="mt-4 text-xs text-zinc-400">
-        {getAuthorName(submission, church, labels)}
-      </p>
+    <article className={`relative flex items-start overflow-hidden bg-card ${styles.root}`}>
+      {/* Accent bar — semantic prayer/praise color, church-adjustable at runtime */}
+      <div
+        className={`self-stretch shrink-0 ${styles.bar} ${
+          submission.type === 'prayer' ? 'bg-prayer' : 'bg-praise'
+        }`}
+      />
 
-      <div className="mt-3 flex gap-2 border-t border-zinc-100 pt-3">
-        {REACTION_ORDER.map((emoji) => {
-          const isActive = reacted.includes(emoji)
-          return (
-            <button
-              key={emoji}
-              type="button"
-              ref={(el) => {
-                buttonRefs.current[emoji] = el
-              }}
-              onClick={() => handleTap(emoji)}
-              className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs transition-transform ${
-                isActive
-                  ? 'scale-105 border-[var(--brand-color)] bg-zinc-50 font-semibold'
-                  : 'border-zinc-200 text-zinc-500 hover:bg-zinc-50'
-              }`}
-              aria-label={`React with ${emoji}`}
-            >
-              <span>{EMOJI_GLYPHS[emoji]}</span>
-              <span>{reactions[emoji] ?? 0}</span>
-            </button>
-          )
-        })}
-
-        {/* Updates toggle — shown to owner always, to others when signed in */}
-        {(isOwner || currentUserId) && (
-          <button
-            type="button"
-            onClick={() => setShowUpdates((v) => !v)}
-            className="ml-auto rounded-full border border-zinc-200 px-2.5 py-1 text-xs text-zinc-500 hover:bg-zinc-50"
+      <div className={`flex min-w-0 flex-1 flex-col ${styles.body}`}>
+        <div className={`flex items-center ${styles.header}`}>
+          <span
+            className={`flex shrink-0 items-center justify-center rounded-full text-secondary ${
+              submission.type === 'prayer' ? 'bg-prayer-bg' : 'bg-praise-bg'
+            } ${styles.avatar}`}
+            aria-hidden="true"
           >
-            {showUpdates ? 'Hide updates' : 'Updates'}
-          </button>
+            {getInitials(authorName)}
+          </span>
+
+          {size === 'default' && (
+            <div className="flex min-w-0 flex-col gap-[2px]">
+              <p className="truncate text-label font-medium text-primary">{authorName}</p>
+              <div className="flex items-center gap-1.5">
+                {now !== null && (
+                  <p className="text-caption text-muted">
+                    {formatRelativeTime(submission.created_at, now)}
+                  </p>
+                )}
+                {isAnswered && <AnsweredBadge labels={labels} />}
+              </div>
+            </div>
+          )}
+
+          {size === 'compact' && (
+            <>
+              <p className="truncate text-caption text-primary">{authorName}</p>
+              {isAnswered && <AnsweredBadge labels={labels} />}
+            </>
+          )}
+
+          {isDisplay && (
+            <>
+              <p className="truncate font-display text-h2 font-medium text-primary">
+                {authorName}
+              </p>
+              {isAnswered && <AnsweredBadge labels={labels} />}
+            </>
+          )}
+        </div>
+
+        <p className={`whitespace-pre-wrap ${styles.content}`}>{submission.content}</p>
+
+        {!isDisplay && (
+          <>
+            <div className={`flex items-center ${size === 'compact' ? 'gap-[10px]' : 'gap-md'}`}>
+              {REACTION_ORDER.map((emoji) => {
+                const isActive = reacted.includes(emoji)
+                return (
+                  <button
+                    key={emoji}
+                    type="button"
+                    ref={(el) => {
+                      buttonRefs.current[emoji] = el
+                    }}
+                    onClick={() => handleTap(emoji)}
+                    className={`flex items-center gap-1 rounded-full border px-2.5 py-1 text-caption transition-transform ${
+                      isActive
+                        ? 'scale-105 border-brand bg-page font-semibold text-primary'
+                        : 'border-border text-secondary hover:bg-page'
+                    }`}
+                    aria-label={`React with ${emoji}`}
+                  >
+                    <span>{EMOJI_GLYPHS[emoji]}</span>
+                    <span>{reactions[emoji] ?? 0}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Updates toggle — shown to owner always, to others when signed in */}
+            {(isOwner || currentUserId) && (
+              <div className="flex">
+                <button
+                  type="button"
+                  onClick={() => setShowUpdates((v) => !v)}
+                  aria-expanded={showUpdates}
+                  className="text-caption text-secondary underline-offset-2 hover:underline"
+                >
+                  {updatesLink}
+                </button>
+              </div>
+            )}
+
+            {showUpdates && (
+              <UpdatesThread
+                submissionId={submission.id}
+                currentUserId={currentUserId}
+                isOwner={isOwner}
+                onCountChange={setUpdatesCount}
+              />
+            )}
+          </>
         )}
       </div>
-
-      {showUpdates && (
-        <UpdatesThread
-          submissionId={submission.id}
-          currentUserId={currentUserId}
-          isOwner={isOwner}
-        />
-      )}
 
       {bursts.map((burst) => (
         <span

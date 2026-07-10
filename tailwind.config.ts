@@ -51,6 +51,19 @@ const config: Config = {
         lg: "var(--radius-lg)",
         full: "var(--radius-full)",
       },
+      boxShadow: {
+        card: "var(--shadow-card)",
+        modal: "var(--shadow-modal)",
+      },
+      fontSize: {
+        display: ["var(--font-display-size)", { lineHeight: "var(--font-display-line)" }],
+        h1: ["var(--font-h1-size)", { lineHeight: "var(--font-h1-line)" }],
+        h2: ["var(--font-h2-size)", { lineHeight: "var(--font-h2-line)" }],
+        body: ["var(--font-body-size)", { lineHeight: "normal" }],
+        "body-sm": ["var(--font-body-small-size)", { lineHeight: "normal" }],
+        caption: ["var(--font-caption-size)", { lineHeight: "normal" }],
+        label: ["var(--font-label-size)", { lineHeight: "normal" }],
+      },
       fontFamily: {
         display: ["var(--font-lexend)", "sans-serif"],
         body: ["var(--font-inter)", "sans-serif"],

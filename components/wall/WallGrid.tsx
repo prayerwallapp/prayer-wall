@@ -7,7 +7,7 @@ import type {
   ReactionEmoji,
   SubmissionWithAuthor,
 } from '@/lib/supabase/types'
-import SubmissionCard from './SubmissionCard'
+import SubmissionCard, { type CardSize } from './SubmissionCard'
 
 type Props = {
   submissions: SubmissionWithAuthor[]
@@ -16,6 +16,9 @@ type Props = {
   reactionCounts: Record<string, ReactionCounts>
   onReact: (submissionId: string, emoji: ReactionEmoji) => void
   currentUserId: string | null
+  // Hook for the future wall_density church setting; the wall renders
+  // Default cards until that column exists.
+  size?: CardSize
 }
 
 const EMPTY_COUNTS: ReactionCounts = { prayer: 0, praise: 0, heart: 0 }
@@ -27,6 +30,7 @@ export default function WallGrid({
   reactionCounts,
   onReact,
   currentUserId,
+  size = 'default',
 }: Props) {
   if (submissions.length === 0) {
     return (
@@ -45,6 +49,7 @@ export default function WallGrid({
           submission={submission}
           church={church}
           labels={labels}
+          size={size}
           reactions={reactionCounts[submission.id] ?? EMPTY_COUNTS}
           onReact={onReact}
           currentUserId={currentUserId}
