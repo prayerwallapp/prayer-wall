@@ -50,7 +50,7 @@ export default async function DisplayPage() {
   const submissions = await getApprovedSubmissions(church.id)
 
   return (
-    <main className="no-scrollbar flex h-screen flex-col gap-8 overflow-hidden px-10 py-10 bg-[var(--background-color)]">
+    <main className="no-scrollbar flex h-screen flex-col gap-8 overflow-hidden bg-page px-10 py-10">
       <header className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           {church.logo_url && (
@@ -62,8 +62,8 @@ export default async function DisplayPage() {
             />
           )}
           <div>
-            <h1 className="text-3xl font-semibold text-zinc-900">{labels.wall_title}</h1>
-            <p className="text-lg text-zinc-500">{church.name}</p>
+            <h1 className="font-display text-h1 font-semibold text-primary">{labels.wall_title}</h1>
+            <p className="text-body text-muted">{church.name}</p>
           </div>
         </div>
         <Clock />
