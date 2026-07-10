@@ -39,10 +39,30 @@ export function Avatar({
   const initial = (profile.displayName || profile.email || '?').charAt(0).toUpperCase()
   return (
     <span
-      className={`${sizeClass} ${textClass} flex items-center justify-center rounded-full font-medium text-white bg-[var(--brand-color)]`}
+      className={`${sizeClass} ${textClass} flex items-center justify-center rounded-full font-medium text-brand-on bg-brand`}
     >
       {initial}
     </span>
+  )
+}
+
+// 20×20 stroke icons matching the Figma icon set (Lucide-style, stroke="currentColor")
+function PersonIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </svg>
+  )
+}
+
+function LogOutIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <polyline points="16 17 21 12 16 7" />
+      <line x1="21" y1="12" x2="9" y2="12" />
+    </svg>
   )
 }
 
@@ -91,38 +111,48 @@ export default function ProfileMenu({ profile, onEditProfile }: Props) {
         onClick={() => setOpen((current) => !current)}
         aria-label="Open profile menu"
         aria-expanded={open}
-        className="block rounded-full ring-offset-2 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[var(--brand-color)]"
+        className="block rounded-full ring-offset-2 transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand"
       >
         <Avatar profile={profile} />
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-40 mt-2 min-w-48 rounded-xl bg-white p-2 shadow-lg ring-1 ring-zinc-100">
-          <div className="px-3 py-2">
-            <p className="text-sm font-medium text-zinc-900">
+        // Container: Figma spec — 240px wide, bg-card, border-border, rounded-md (12px),
+        // shadow-modal. Item rows use 14px/10px padding (intentional off-scale Figma values).
+        <div className="absolute right-0 top-full z-40 mt-2 w-60 overflow-hidden rounded-md border border-border bg-card py-2 shadow-modal">
+          {/* Header row — bg-page tint, same as Figma's first "Profile" row treatment */}
+          <div className="bg-page px-[14px] py-[10px]">
+            <p className="text-body-sm font-medium text-primary">
               {profile.displayName || profile.email}
             </p>
-            <p className="text-xs text-gray-400">{profile.email}</p>
+            <p className="text-caption text-muted">{profile.email}</p>
           </div>
-          <div className="my-1 h-px bg-zinc-100" />
+
+          <div className="h-px bg-border" />
+
           <button
             type="button"
             onClick={() => {
               setOpen(false)
               onEditProfile()
             }}
-            className="min-h-[44px] w-full rounded-md px-3 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+            className="flex min-h-[44px] w-full items-center gap-[10px] px-[14px] py-[10px] text-left text-body-sm text-primary hover:bg-page"
           >
+            <PersonIcon />
             Edit profile
           </button>
+
+          <div className="h-px bg-border" />
+
           <button
             type="button"
             onClick={() => {
               setOpen(false)
               void handleSignOut()
             }}
-            className="min-h-[44px] w-full rounded-md px-3 text-left text-sm text-zinc-700 hover:bg-zinc-50"
+            className="flex min-h-[44px] w-full items-center gap-[10px] px-[14px] py-[10px] text-left text-body-sm text-primary hover:bg-page"
           >
+            <LogOutIcon />
             Sign out
           </button>
         </div>
