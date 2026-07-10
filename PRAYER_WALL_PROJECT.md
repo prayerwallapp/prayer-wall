@@ -119,6 +119,9 @@ brand_color       text        -- hex e.g. '#4F46E5'
 background_color  text        -- hex e.g. '#F9F7F4'
 hide_member_names boolean     DEFAULT false
 reaction_settings jsonb       DEFAULT '{"prayer": true, "praise": true, "heart": true}'
+prayer_color      text        -- hex; null → tokens.css default (#9FE1CB). Session 10.
+praise_color      text        -- hex; null → tokens.css default (#FAC775). Session 10.
+wall_density      text        -- 'large' | 'small'; null → 'large'. Session 10.
 summary_emails    text[]      -- array of recipient emails
 summary_enabled   boolean     DEFAULT true
 plan              text        DEFAULT 'free'  -- 'free' | 'pro'

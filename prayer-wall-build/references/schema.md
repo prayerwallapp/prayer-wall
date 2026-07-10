@@ -13,6 +13,10 @@ CREATE TABLE churches (
   label_overrides     jsonb DEFAULT '{}',
   hide_member_names   boolean DEFAULT false,
   reaction_settings   jsonb DEFAULT '{"prayer": true, "praise": true, "heart": true}',
+  -- session10.sql
+  prayer_color        text,
+  praise_color        text,
+  wall_density        text CHECK (wall_density IN ('large', 'small')),
   summary_emails      text[] DEFAULT '{}',
   summary_enabled     boolean DEFAULT true,
   plan                text DEFAULT 'free' CHECK (plan IN ('free', 'pro')),
