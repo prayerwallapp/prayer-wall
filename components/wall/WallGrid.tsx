@@ -31,7 +31,7 @@ export default function WallGrid({
   const size: CardSize = church.wall_density === 'small' ? 'compact' : 'default'
   if (submissions.length === 0) {
     return (
-      <p className="mx-auto max-w-5xl text-center text-zinc-500">
+      <p className="mx-auto max-w-5xl text-center text-body-sm text-muted">
         No {labels.prayer.toLowerCase()}s or {labels.praise.toLowerCase()}s yet — be the
         first to share one.
       </p>
