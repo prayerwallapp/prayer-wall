@@ -16,9 +16,6 @@ type Props = {
   reactionCounts: Record<string, ReactionCounts>
   onReact: (submissionId: string, emoji: ReactionEmoji) => void
   currentUserId: string | null
-  // Hook for the future wall_density church setting; the wall renders
-  // Default cards until that column exists.
-  size?: CardSize
 }
 
 const EMPTY_COUNTS: ReactionCounts = { prayer: 0, praise: 0, heart: 0 }
@@ -30,8 +27,8 @@ export default function WallGrid({
   reactionCounts,
   onReact,
   currentUserId,
-  size = 'default',
 }: Props) {
+  const size: CardSize = church.wall_density === 'small' ? 'compact' : 'default'
   if (submissions.length === 0) {
     return (
       <p className="mx-auto max-w-5xl text-center text-zinc-500">

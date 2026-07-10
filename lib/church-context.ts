@@ -17,6 +17,9 @@ export type ChurchPublic = Pick<
 > & {
   hide_member_names: boolean
   crisis_line_text: string | null
+  prayer_color: string | null
+  praise_color: string | null
+  wall_density: 'large' | 'small' | null
 }
 
 export function toPublicChurch(church: ChurchRow): ChurchPublic {
@@ -29,6 +32,9 @@ export function toPublicChurch(church: ChurchRow): ChurchPublic {
     background_color: church.background_color,
     hide_member_names: church?.hide_member_names ?? false,
     crisis_line_text: church?.crisis_line_text ?? null,
+    prayer_color: church?.prayer_color ?? null,
+    praise_color: church?.praise_color ?? null,
+    wall_density: church?.wall_density ?? null,
   }
 }
 

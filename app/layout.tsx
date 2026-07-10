@@ -4,6 +4,7 @@ import './tokens.css'
 import './globals.css'
 import { getChurchContext } from '@/lib/church-context'
 import { getLabels } from '@/lib/labels'
+import { getContrastForeground } from '@/lib/theme/contrast'
 
 const lexend = Lexend({
   subsets: ['latin'],
@@ -19,6 +20,9 @@ const inter = Inter({
 
 const DEFAULT_BRAND_COLOR = '#6366F1'
 const DEFAULT_BACKGROUND_COLOR = '#FAFAF9'
+// Match tokens.css defaults: --teal-100 and --amber-100
+const DEFAULT_PRAYER_COLOR = '#9FE1CB'
+const DEFAULT_PRAISE_COLOR = '#FAC775'
 
 export async function generateMetadata(): Promise<Metadata> {
   const church = await getChurchContext()
@@ -39,6 +43,8 @@ export default async function RootLayout({
   const church = await getChurchContext()
   const brandColor = church?.brand_color ?? DEFAULT_BRAND_COLOR
   const backgroundColor = church?.background_color ?? DEFAULT_BACKGROUND_COLOR
+  const prayerColor = church?.prayer_color ?? DEFAULT_PRAYER_COLOR
+  const praiseColor = church?.praise_color ?? DEFAULT_PRAISE_COLOR
 
   return (
     <html lang="en">
@@ -52,7 +58,12 @@ export default async function RootLayout({
             // Design-system tokens (app/tokens.css) — church values override
             // the static defaults so token-based Tailwind classes are branded.
             '--color-brand-primary': brandColor,
+            '--color-brand-on-primary': getContrastForeground(brandColor),
             '--color-bg-page': backgroundColor,
+            '--color-semantic-prayer-bg': prayerColor,
+            '--color-semantic-prayer-text': getContrastForeground(prayerColor),
+            '--color-semantic-praise-bg': praiseColor,
+            '--color-semantic-praise-text': getContrastForeground(praiseColor),
           } as React.CSSProperties
         }
       >

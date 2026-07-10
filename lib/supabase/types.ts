@@ -38,6 +38,10 @@ export type ChurchRow = {
   embed_enabled?: boolean | null
   // session7.sql
   reaction_settings?: { prayer: boolean; praise: boolean; heart: boolean } | null
+  // session10.sql
+  prayer_color?: string | null
+  praise_color?: string | null
+  wall_density?: 'large' | 'small' | null
   created_at: string
 }
 
