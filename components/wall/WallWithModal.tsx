@@ -177,7 +177,7 @@ export default function WallWithModal({
   )
 
   return (
-    <main className="min-h-screen px-6 py-12 sm:px-10">
+    <main className="min-h-screen bg-page px-6 py-12 sm:px-10">
       <header className="mx-auto mb-10 flex max-w-5xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
           {church.logo_url && (
@@ -189,15 +189,15 @@ export default function WallWithModal({
             />
           )}
           <div>
-            <h1 className="text-2xl font-semibold text-zinc-900">{labels.wall_title}</h1>
-            <p className="text-sm text-zinc-500">{church.name}</p>
+            <h1 className="font-display text-h1 font-semibold text-primary">{labels.wall_title}</h1>
+            <p className="text-caption text-muted">{church.name}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <button
             type="button"
             onClick={() => setModalOpen(true)}
-            className="rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm bg-[var(--brand-color)]"
+            className="rounded-full bg-brand px-5 py-[10px] text-label font-medium text-brand-on shadow-card"
           >
             {labels.submit_button}
           </button>
@@ -216,7 +216,7 @@ export default function WallWithModal({
                 setAuthState('signin')
                 setModalOpen(true)
               }}
-              className="text-sm text-gray-500 hover:text-gray-700"
+              className="text-body-sm text-secondary hover:text-primary"
             >
               Sign in
             </button>
