@@ -1,7 +1,7 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { getChurchContext } from '@/lib/church-context'
 import { getCurrentUser } from '@/lib/auth'
+import AdminNav from '@/components/admin/AdminNav'
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const church = await getChurchContext()
@@ -33,21 +33,11 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   return (
     <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r border-zinc-200 bg-white p-6">
-        <h2 className="mb-6 text-sm font-semibold uppercase tracking-wide text-zinc-400">
+      <aside className="w-56 shrink-0 border-r border-border bg-card p-6">
+        <h2 className="mb-6 text-caption font-semibold uppercase tracking-widest text-muted">
           {church.name}
         </h2>
-        <nav className="flex flex-col gap-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="rounded-md px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100"
-            >
-              {item.label}
-            </Link>
-          ))}
-        </nav>
+        <AdminNav items={navItems} />
       </aside>
       <div className="flex-1 p-8">{children}</div>
     </div>
