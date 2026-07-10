@@ -3,6 +3,7 @@ import { requireRole } from '@/lib/auth'
 import { DEFAULT_LABELS, type LabelKey } from '@/lib/labels'
 import { updateChurchSettings } from './actions'
 import BrandingForm from '@/components/admin/BrandingForm'
+import UpgradePrompt from '@/components/UpgradePrompt'
 
 export const revalidate = 0
 
@@ -168,6 +169,20 @@ export default async function SettingsPage() {
           Save settings
         </button>
       </form>
+
+      {church.plan !== 'pro' && (
+        <div className="mt-10 flex flex-col gap-4">
+          <h2 className="font-display text-h2 font-semibold text-primary">Pro features</h2>
+          <UpgradePrompt
+            feature="Display App"
+            description="Show your live prayer wall on a fullscreen TV or projector — perfect for in-venue and lobby screens."
+          />
+          <UpgradePrompt
+            feature="AI Moderation"
+            description="Automatically screen submissions for sensitive content with Claude-powered analysis and crisis detection."
+          />
+        </div>
+      )}
     </div>
   )
 }
