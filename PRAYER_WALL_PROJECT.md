@@ -47,7 +47,7 @@ Prayer Wall digitises this workflow in a way that feels alive — real people, r
 
 1. **Submission Webapp** — Where congregation members authenticate and submit prayer requests or praise reports. Shows optimistic local display on submit; actual post goes to moderation queue first. Mobile-first, responsive.
 
-2. **Prayer Wall Grid** — Public-facing live board displaying approved submissions in a Pinterest-style masonry grid. Each card shows: name (or Anonymous), request text, category emoji (🙏 prayer / 🙌 praise). Tapping/holding a card triggers an emoji burst animation on that card.
+2. **Prayer Wall Grid** — Public-facing live board displaying approved submissions in a grid (see UI note below — the doc's original "masonry" description is aspirational/legacy; the actual implementation is a responsive `grid`, not CSS columns/masonry). Each card shows: name (or Anonymous), request text, category emoji (🙏 prayer / 🙌 praise). Tapping/holding a card triggers an emoji burst animation on that card.
 
 3. **Display App** — A separate browser-based fullscreen view pulling from the same real-time database. Designed for LED screens in auditoriums or TVs in foyers. Auto-scrolling, no user interaction required, auto-refreshes via Supabase real-time subscription (no manual browser refresh needed). This is a **paid feature (Pro tier)**.
 
@@ -80,10 +80,12 @@ Prayer Wall digitises this workflow in a way that feels alive — real people, r
 ### Multi-Tenancy
 Single codebase, single database, single deployment. Every table includes a `church_id` column. Row Level Security (RLS) policies in Supabase enforce data isolation at the database level — not just application level. A church can never access another church's data even if app-level filtering fails.
 
-**Known limitation — `reactions.user_id` cross-tenant exposure (accepted, MVP):** The `reactions` table is intentionally world-readable via the anon key so anonymous realtime reaction counts work. Session 7 added `reactions.user_id` (reactor identity), which means reactor UUIDs are now visible to any authenticated user regardless of church, and to the anon key via the REST API. A `REVOKE SELECT (user_id) ON reactions FROM anon, authenticated` was attempted but is a no-op: Supabase's table-level `GRANT SELECT ON reactions TO anon` cannot be overridden by a column-level REVOKE. The correct fix — revoke the table-level grant and re-grant column-by-column — requires a staging Supabase project to test safely, since a mistake would break live reaction counts for all churches. **Accepted for MVP**: the exposure is low-severity (random UUIDs only; the `users` table RLS prevents resolving any UUID to a name or email). Revisit when a staging environment exists.
+**Known limitation — `reactions.user_id` cross-tenant exposure (accepted, MVP):** The `reactions` table is intentionally world-readable via the anon key so anonymous realtime reaction counts work. `reactions.user_id` (reactor identity) means reactor UUIDs are visible to any authenticated user regardless of church, and to the anon key via the REST API. A `REVOKE SELECT (user_id) ON reactions FROM anon, authenticated` was attempted but is a no-op: Supabase's table-level `GRANT SELECT ON reactions TO anon` cannot be overridden by a column-level REVOKE. The correct fix — revoke the table-level grant and re-grant column-by-column — requires a staging Supabase project to test safely, since a mistake would break live reaction counts for all churches. **Accepted for MVP**: the exposure is low-severity (random UUIDs only; the `users` table RLS prevents resolving any UUID to a name or email). Revisit when a staging environment exists.
 
 ### Routing
 Churches are identified by subdomain: `{church}.prayerwallapp.com`. Subdomain is resolved at the Next.js middleware level to look up the `church_id` and inject church context into every request. Custom domain mapping (church brings their own domain) is a future Pro feature.
+
+**Preview deploy caveat:** Vercel branch preview URLs break subdomain-based church resolution (no real subdomain to parse). A `?church=` query param override was added to middleware, active only on non-production hosts, as a workaround for branch preview testing. Preview deploys are also currently broken for an unrelated reason — see Known Open Issues below.
 
 ### App Structure (Monorepo-ready)
 ```
@@ -108,6 +110,8 @@ Supabase real-time subscriptions power both the wall grid and the display app. N
 
 ## Database Schema
 
+> Canonical, exact DDL lives at `.claude/skills/prayer-wall-build/references/schema.md` — this section is a readable summary. If the two ever disagree, `references/schema.md` wins; treat that as a sync bug to fix, not a judgment call.
+
 ### `churches`
 ```
 id                uuid PK
@@ -119,6 +123,7 @@ brand_color       text        -- hex e.g. '#4F46E5'
 background_color  text        -- hex e.g. '#F9F7F4'
 hide_member_names boolean     DEFAULT false
 reaction_settings jsonb       DEFAULT '{"prayer": true, "praise": true, "heart": true}'
+embed_enabled     boolean     NOT NULL DEFAULT false  -- session6.sql; gates the /wall embed route
 prayer_color      text        -- hex; null → tokens.css default (#9FE1CB). Session 10.
 praise_color      text        -- hex; null → tokens.css default (#FAC775). Session 10.
 wall_density      text        -- 'large' | 'small'; null → 'large'. Session 10.
@@ -130,12 +135,15 @@ created_at        timestamptz
 
 ### `users`
 ```
-id                uuid PK (references Supabase auth.users)
-church_id         uuid FK → churches
-role              text        -- 'member' | 'moderator' | 'admin'
-display_name      text
-email             text
-created_at        timestamptz
+id                    uuid PK (references Supabase auth.users)
+church_id             uuid FK → churches
+role                  text        -- 'member' | 'moderator' | 'admin'
+display_name          text
+email                 text
+created_at            timestamptz
+profile_image_url     text        -- session3.sql
+notify_prayer_email   boolean     NOT NULL DEFAULT true   -- session6.sql; email on prayer/praise reaction
+notify_prayer_inapp   boolean     NOT NULL DEFAULT true   -- session6.sql; in-app on prayer/praise reaction
 ```
 
 ### `submissions`
@@ -152,7 +160,7 @@ moderated_by          uuid FK → users (nullable)
 moderated_at          timestamptz (nullable)
 priority              text        DEFAULT 'normal'  -- internal-only, reserved for future AI-analysis input, no member-facing UI
 update_used           boolean     DEFAULT false      -- one-edit-per-post limit
-related_submission_id uuid FK → submissions (nullable) -- praise report linked to a prior prayer request, same church only
+related_submission_id uuid FK → submissions (nullable) -- praise report linked to a prior prayer request, same church only, DB trigger-enforced
 created_at            timestamptz
 ```
 
@@ -179,10 +187,36 @@ created_at        timestamptz
 id                uuid PK
 submission_id     uuid FK → submissions
 church_id         uuid FK → churches
-user_id           uuid FK → users     -- reactor identity, used for notification naming
+user_id           uuid FK → users (nullable, ON DELETE SET NULL) -- reactor identity, used for notification naming
 emoji             text        -- must be an enabled key in church.reaction_settings
 created_at        timestamptz
 ```
+
+### `submission_updates` — session6.sql
+```
+id                uuid PK
+submission_id     uuid FK → submissions
+church_id         uuid FK → churches
+user_id           uuid FK → users
+content           text NOT NULL
+created_at        timestamptz
+```
+One row per edit. `submissions.update_used` enforces the one-edit-per-post limit at the app layer (edit endpoint checks and sets it).
+
+### `notifications` — session6.sql
+```
+id                uuid PK
+church_id         uuid FK → churches
+user_id           uuid FK → users
+submission_id     uuid FK → submissions (nullable, CASCADE)
+type              text NOT NULL DEFAULT 'prayer'  -- 'prayer' | 'update'
+prayer_count      integer NOT NULL DEFAULT 1
+read              boolean NOT NULL DEFAULT false
+email_sent        boolean NOT NULL DEFAULT false
+created_at        timestamptz
+updated_at        timestamptz
+```
+**Important for any NotificationBell UI work:** repeat reactions on the same submission **increment `prayer_count` on an existing row**, they don't insert new rows. Any notification list/badge UI must reflect this count model, not a raw event feed. Added to `supabase_realtime` publication for live badge updates.
 
 ---
 
@@ -230,7 +264,7 @@ Moderator reviews pending queue
 Approved + public submissions appear on live wall (real-time)
 ```
 
-Note: the visibility decision was moved from the member's submit form to the moderator's approve action (Session 7). Members no longer choose public/private at submission time.
+Note: the visibility decision was moved from the member's submit form to the moderator's approve action. Members no longer choose public/private at submission time.
 
 ---
 
@@ -278,8 +312,10 @@ Each church configures in their dashboard:
 - **Favicon** — per-subdomain favicon via Next.js metadata API
 - **Primary brand color** — drives buttons, accents, emoji burst tint (`--brand-color`)
 - **Background color** — surface/background color (`--background-color`)
+- **Prayer color / Praise color** — per-category accent colors (Session 10), null falls back to `tokens.css` defaults
+- **Wall density** — `large` | `small` card sizing (Session 10), null falls back to `large`
 
-These are stored on the `churches` table and injected as CSS custom properties at the root layout level. All components use `var(--brand-color)` — never hardcoded values.
+These are stored on the `churches` table and injected as CSS custom properties at the root layout level. All components use `var(--brand-color)` (and the equivalent for the newer tokens) — never hardcoded values. Full token system (`app/tokens.css`, Tailwind theme extension, Lexend/Inter fonts, semantic status tokens, WCAG contrast utility) is documented in the Design System section below.
 
 ---
 
@@ -300,6 +336,7 @@ All frontend strings must be defined in a constants/config file from day one —
 **To:** Addresses stored in `churches.summary_emails`
 **Template:** React Email, branded with church logo and `brand_color`
 **Sender:** always read from `process.env.EMAIL_FROM_ADDRESS` — never a hardcoded domain
+**Front-facing display email (UI copy, digest footer, contact links only — not sending config):** `support@prayerwallapp.com`
 
 **Contents:**
 - Church logo + brand color header
@@ -316,12 +353,43 @@ All frontend strings must be defined in a constants/config file from day one —
 
 ---
 
-## Reactions & Notifications (Session 7)
+## Reactions & Notifications (Session 6)
 
 - `churches.reaction_settings` jsonb: 🙏 prayer and 🙌 praise are permanently enabled and cannot be toggled off. A third slot (default ❤️ heart) has a single on/off toggle, no emoji picker yet.
 - `reactions.user_id` records reactor identity.
 - Prayer/praise reactions trigger email + in-app notification, naming the reactor unless `church.hide_member_names` is true (then a generic phrase is used). Heart reactions trigger in-app only.
 - Reaction emoji is validated server-side against the church's enabled set on every request — never trust client-side gating alone.
+- Repeat reactions increment `notifications.prayer_count` on an existing row rather than creating new rows — see `notifications` schema above.
+
+---
+
+## Design System (Sessions 9–13)
+
+**Status: functionally complete for all surfaces with an existing Figma design, and for all no-design-needed surfaces.** Only 4 items remain genuinely blocked on new design work (below).
+
+- Token layer: `app/tokens.css` + Tailwind theme extension, Lexend/Inter fonts
+- Figma source file: `utGO9go3xjfNUC0N6yIbzM`
+- WCAG contrast utility: `lib/theme/contrast.ts`, verified against 8+ hex values including edge cases
+- Semantic status tokens: `--color-status-success/-warning/-danger` (bg+text pairs)
+- Surface audit: `docs/ui-audit-2026-07-10.md` — every route classified MIGRATED / HAS_DESIGN+NOT_MIGRATED / NO_DESIGN
+
+**Remaining NO_DESIGN blockers — active work item ("Figma Components Work List"):**
+1. **ProfileModal** — photo upload, name, password, notifications, GDPR sections
+2. **NotificationBell + dropdown** — blocked on a product decision (what triggers a notification), not just UI, before design makes sense
+3. **Landing page + WaitlistForm** — marketing surface, likely different design context/owner than the app itself
+4. **Toast/notification system** — global vs. per-surface undecided
+
+**Surfaces built straight-to-code (no new Figma needed), Session 12:** Admin keyword rules page, Admin digest settings page, Auth reset form, Embed wall + SubmissionsGrid, Error boundaries/404 pages, reusable UpgradePrompt component.
+
+**Front-facing email sweep (Session 13):** all instances of `josiah@santehouse.co` / `prayerwall@santehouse.co` in user-facing UI (UpgradePrompt, Terms of Service, Privacy Policy) replaced with `support@prayerwallapp.com`. Confirmed display-only — does not touch auth/session/Resend/backend config.
+
+---
+
+## Claude Code Skill Infrastructure
+
+- Canonical reference docs live at `.claude/skills/prayer-wall-build/references/` (`schema.md`, `patterns.md`) — **not** repo root.
+- `CLAUDE.md` at repo root auto-loads at Claude Code session start.
+- Both `prayer-wall-build` and `prayer-wall-product` skills, including their `SKILL.md` files, are now git-tracked as of the current session (previously `.claude/` was fully gitignored, and even after a partial exception, `SKILL.md` files were untracked until this fix — verify with `git ls-files .claude/` if in doubt).
 
 ---
 
@@ -346,29 +414,30 @@ Reason is visible to moderator in the inbox to explain the flag.
 ## MVP Scope — What's In
 
 - [x] Multi-tenant Next.js app with subdomain routing
-- [x] Supabase auth (email + Google SSO) — Google OAuth tested end-to-end (Session 8): redirect → callback → users row created with correct church_id, display_name pre-populated from Google metadata, re-sign-in matches existing row (no duplicate)
+- [x] Supabase auth (email + Google SSO) — Google OAuth tested end-to-end: redirect → callback → users row created with correct church_id, display_name pre-populated from Google metadata, re-sign-in matches existing row (no duplicate)
 - [x] Role-based access (member / moderator / admin)
 - [x] Submission form with optimistic local display
 - [x] Moderation inbox with approve / hold / flag actions
 - [x] Escalation email routing (manual pastor contact field)
 - [x] Prayer wall grid with real-time updates
 - [x] Emoji burst interaction on cards
-- [ ] Display app (Pro gated, real-time, auto-scroll, fullscreen) — built, styling/animation deferred to UI polish session
-- [x] Church branding (logo, favicon, 2 colors)
+- [x] Display app (Pro gated, real-time, auto-scroll, fullscreen) — built and functional; visual polish is tracked separately, not a scope gap
+- [x] Church branding (logo, favicon, 2 colors, + prayer/praise color, wall density — Session 10)
 - [x] Label override settings
 - [x] Keyword moderation rules (hold / escalate tiers)
 - [x] Weekly email digest (Resend + React Email)
-- [x] Keep-alive cron job — verified live (Session 8.1): GET /api/ping returns `{"ok":true}` HTTP 200 with correct CRON_SECRET auth; both /api/ping and /api/digest are registered in vercel.json
+- [x] Keep-alive cron job — verified live: GET /api/ping returns `{"ok":true}` HTTP 200 with correct CRON_SECRET auth; both /api/ping and /api/digest registered in vercel.json
 - [x] Landing page with waitlist capture
-- [x] Privacy Policy — live at /privacy-policy; content drafted and marked DRAFT pending attorney review (Session 8.1)
-- [x] Terms of Service — live at /terms-of-service; same draft status; note: Section 8 references "our pricing page" which does not yet exist (Session 8.1)
-- [x] Sign-up consent line ("By continuing, you agree to our Terms of Service and Privacy Policy") added to sign-in modal, links confirmed working across subdomains (Session 8.1)
+- [x] Privacy Policy — live at /privacy-policy; content drafted and marked DRAFT pending attorney review
+- [x] Terms of Service — live at /terms-of-service; same draft status; note: Section 8 references "our pricing page" which does not yet exist
+- [x] Sign-up consent line ("By continuing, you agree to our Terms of Service and Privacy Policy") added to sign-in modal, links confirmed working across subdomains
 - [x] Platform watermark (free tier) — verified with real HTTP: plan=free renders watermark in RSC payload, plan=pro does not
 - [x] Personalized wall query for authenticated members (own submissions any status + others' approved/public)
 - [x] Reactions overhaul + reactor identity
 - [x] One-update-per-post limit
 - [x] Praise-report linked-duplicate (functional, minimal UI)
 - [x] Keyword-check enforcement on submission edits (no bypass)
+- [x] Full Figma design system migration for all designed + no-design-needed surfaces (Sessions 9–13)
 
 ## MVP Scope — What's Out
 
@@ -386,9 +455,12 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 ---
 
-## Legal / Compliance — Outstanding Blocker
+## Known Open Issues
 
-Prayer request data is sensitive PII. A privacy policy and terms of service (data retention, moderation disclaimer, visibility consent) must be in place before onboarding real churches beyond a trusted beta. This is not yet built as of Session 7 and should not be treated as a "later" item once a beta church goes live with real member data.
+- **`reactions.user_id` cross-tenant exposure** — see Multi-Tenancy section above. Accepted MVP risk, needs staging Supabase to fix safely.
+- **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
+- **Preview deploys broken** — missing env vars in Vercel's Preview environment, by design until a staging Supabase project exists. Verified work goes straight to `main` after real localhost + production checks (no staging branch workflow yet).
+- **4 NO_DESIGN UI surfaces** — see Design System section above.
 
 ---
 
@@ -431,8 +503,10 @@ Prayer request data is sensitive PII. A privacy policy and terms of service (dat
 - Physical hardware tier (button triggers for display app) — Studio tier, long-term
 - Corporate/event use case — separate brand (`Studio` tier or entirely new product)
 - Comments/replies on submissions — competitive gap vs PrayerPlatform.org, deliberately out of MVP, revisit post-launch
-- First test/demo church — identify a real church to onboard for beta (privacy policy/ToS must land before this)
+- First test/demo church — identify a real church to onboard for beta (privacy policy/ToS attorney review must land before this)
+- Toast system architecture (global vs. per-surface) — see Design System section
+- NotificationBell trigger scope — product decision needed before that surface can be designed
 
 ---
 
-*Last updated: Session 8.1. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth.*
+*Last updated: Session 13 + reconciliation pass (current). Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
