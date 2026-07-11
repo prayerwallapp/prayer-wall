@@ -31,6 +31,18 @@ function incrementCount(
   return { ...prev, [submissionId]: bucket }
 }
 
+function decrementCount(
+  prev: Record<string, ReactionCounts>,
+  submissionId: string,
+  emoji: ReactionEmoji
+): Record<string, ReactionCounts> {
+  const existing = prev[submissionId] as ReactionCounts | undefined
+  if (!existing) return prev
+  const bucket: ReactionCounts = { ...existing }
+  bucket[emoji] = Math.max(0, bucket[emoji] - 1)
+  return { ...prev, [submissionId]: bucket }
+}
+
 type Props = {
   church: ChurchPublic
   labels: Labels
@@ -54,6 +66,7 @@ export default function WallWithModal({
   const [profileModalOpen, setProfileModalOpen] = useState(false)
 
   const ownReactionIds = useRef(new Set<string>())
+  const userProfileRef = useRef<UserProfile | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -62,6 +75,7 @@ export default function WallWithModal({
     async function loadProfile(session: Session | null) {
       if (!session) {
         if (!cancelled) {
+          userProfileRef.current = null
           setUserProfile(null)
           setAuthState('signin')
         }
@@ -77,7 +91,7 @@ export default function WallWithModal({
         .maybeSingle()
 
       if (cancelled) return
-      setUserProfile({
+      const profile = {
         id: session.user.id,
         displayName: userRow?.display_name ?? '',
         email: session.user.email ?? '',
@@ -85,7 +99,9 @@ export default function WallWithModal({
         provider: (session.user.app_metadata?.provider as string | undefined) ?? 'email',
         notifyPrayerEmail: userRow?.notify_prayer_email ?? true,
         notifyPrayerInapp: userRow?.notify_prayer_inapp ?? true,
-      })
+      }
+      userProfileRef.current = profile
+      setUserProfile(profile)
     }
 
     supabase.auth.getSession().then(({ data }) => loadProfile(data.session))
@@ -158,6 +174,14 @@ export default function WallWithModal({
 
   const handleReact = useCallback(
     async (submissionId: string, emoji: ReactionEmoji) => {
+      // Auth gate: unauthenticated visitors see the sign-in modal instead of reacting.
+      // Server enforces 401 independently — this is the client-side UX layer only.
+      if (!userProfileRef.current) {
+        setAuthState('signin')
+        setModalOpen(true)
+        return
+      }
+
       setReactionCounts((prev) => incrementCount(prev, submissionId, emoji))
 
       const response = await fetch('/api/reactions', {
@@ -171,6 +195,11 @@ export default function WallWithModal({
         if (body?.reaction?.id) {
           ownReactionIds.current.add(body.reaction.id)
         }
+      } else if (response?.status === 401) {
+        // Session expired between tap and request: roll back optimistic increment and prompt sign-in.
+        setReactionCounts((prev) => decrementCount(prev, submissionId, emoji))
+        setAuthState('signin')
+        setModalOpen(true)
       }
     },
     []

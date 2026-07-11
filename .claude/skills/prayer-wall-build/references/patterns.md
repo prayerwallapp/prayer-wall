@@ -250,7 +250,7 @@ export async function runKeywordCheck(content: string, churchId: string) {
 
 ---
 
-## Reactions Handler Pattern (Session 7)
+## Reactions Handler Pattern (Session 7 + Session 14)
 
 ```ts
 // app/api/reactions/route.ts
@@ -287,22 +287,34 @@ export async function POST(req: NextRequest) {
 ```
 
 ```ts
-// lib/email/reaction-notification.ts
-export async function sendReactionNotification(churchId: string, submissionId: string, reactor: User, kind: 'prayer' | 'praise') {
-  const { church } = await getChurchContext()
-  const reactorName = church.hide_member_names
-    ? 'A member of your church family'
-    : reactor.display_name
+// lib/email/send-prayer-notification.ts
+// reactor name for email: church.hide_member_names → 'A member of your church family', else reactor.display_name ?? 'Someone'
+// (deliberately longer than in-app "Someone" to match email tone — these are intentionally different)
+await sendPrayerNotificationEmail(owner, notif, reactor, kind)
+```
 
-  const wallUrl = `https://${church.subdomain}.${process.env.NEXT_PUBLIC_ROOT_DOMAIN}`
+**Session 14 additions:**
 
-  await resend.emails.send({
-    from: process.env.EMAIL_FROM_ADDRESS!,
-    to: /* submission owner's email */,
-    subject: `${reactorName} just prayed for you`,
-    react: <ReactionNotification reactorName={reactorName} kind={kind} wallUrl={wallUrl} />,
-  })
-}
+```ts
+// Per-submission email rate limit: up to 3 per 30-min window, then in-app only.
+// Tracked on submissions.email_window_started_at + submissions.email_window_count.
+const EMAIL_WINDOW_MS = 30 * 60 * 1000
+const EMAIL_WINDOW_LIMIT = 3
+
+// Reactor identity snapshot written to notifications on every prayer/praise reaction.
+// reactor_display_name: church.hide_member_names → 'Someone', else reactor.display_name ?? 'Someone'
+// Always updated to most recent reactor (not first), so "Natalia prayed for you"
+// reflects whoever reacted last, even if prayer_count > 1.
+
+// Account deletion scrub: before deleting the users row, set reactor_display_name = 'Someone'
+// where reactor_id = user.id. reactor_id is then nulled by ON DELETE SET NULL on the FK.
+await admin.from('notifications').update({ reactor_display_name: 'Someone' }).eq('reactor_id', user.id)
+await admin.from('users').delete().eq('id', user.id)
+
+// Login gate for reactions (client side, WallWithModal.tsx):
+// Check userProfileRef.current before firing fetch. If null → open sign-in modal, return early.
+// Server independently returns 401 for unauthenticated requests (not relying on client gate alone).
+// On 401 response: roll back optimistic count increment, open sign-in modal.
 ```
 
 ---
@@ -355,6 +367,8 @@ export function SubmissionsGrid({
   )
 }
 ```
+
+> **Known drift (not yet patched):** this example's component signature (`initialSubmissions`, `churchId`) is simplified/illustrative. The real `WallGrid.tsx` takes `church`, `labels`, `reactionCounts`, `onReact`, and `currentUserId` props. The grid className above is accurate and current; the props list is not. Flagged for a future patch, not urgent.
 
 ---
 

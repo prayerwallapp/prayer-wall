@@ -58,9 +58,12 @@ CREATE TABLE submissions (
   moderated_by           uuid REFERENCES users(id),
   moderated_at           timestamptz,
   priority               text DEFAULT 'normal' CHECK (priority IN ('normal', 'urgent')), -- internal only, no member-facing UI
-  update_used            boolean DEFAULT false, -- one-edit-per-post limit
-  related_submission_id  uuid REFERENCES submissions(id) ON DELETE SET NULL, -- praise report linking to a prior prayer request
-  created_at             timestamptz DEFAULT now()
+  update_used              boolean DEFAULT false, -- one-edit-per-post limit
+  related_submission_id    uuid REFERENCES submissions(id) ON DELETE SET NULL, -- praise report linking to a prior prayer request
+  -- session14.sql
+  email_window_started_at  timestamptz,                -- start of current 30-min email rate-limit window; null = no window
+  email_window_count       integer NOT NULL DEFAULT 0, -- emails sent in current window; resets when window expires
+  created_at               timestamptz DEFAULT now()
 );
 
 CREATE OR REPLACE FUNCTION enforce_same_church_relation()
@@ -124,22 +127,27 @@ CREATE INDEX idx_submission_updates_submission ON submission_updates(submission_
 ## notifications
 ```sql
 -- session6.sql — per-user notification log; increments prayer_count on repeat reactions rather than inserting new rows
+-- session14.sql — reactor identity snapshot, type constraint extended to include 'praise'
 CREATE TABLE notifications (
-  id             uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  church_id      uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
-  user_id        uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  submission_id  uuid REFERENCES submissions(id) ON DELETE CASCADE,
-  type           text NOT NULL DEFAULT 'prayer' CHECK (type IN ('prayer', 'update')),
-  prayer_count   integer NOT NULL DEFAULT 1,
-  read           boolean NOT NULL DEFAULT false,
-  email_sent     boolean NOT NULL DEFAULT false,
-  created_at     timestamptz DEFAULT now(),
-  updated_at     timestamptz DEFAULT now()
+  id                    uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  church_id             uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
+  user_id               uuid NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  submission_id         uuid REFERENCES submissions(id) ON DELETE CASCADE,
+  type                  text NOT NULL DEFAULT 'prayer' CHECK (type IN ('prayer', 'praise', 'update')),
+  prayer_count          integer NOT NULL DEFAULT 1,
+  read                  boolean NOT NULL DEFAULT false,
+  email_sent            boolean NOT NULL DEFAULT false,
+  -- session14.sql
+  reactor_id            uuid REFERENCES users(id) ON DELETE SET NULL, -- most recent reactor; nulled on account deletion
+  reactor_display_name  text,  -- snapshot at reaction time; respects hide_member_names ("Someone" if hidden)
+  created_at            timestamptz DEFAULT now(),
+  updated_at            timestamptz DEFAULT now()
 );
 
 CREATE INDEX idx_notifications_user_unread ON notifications(user_id, read) WHERE read = false;
 -- RLS: own_notifications — FOR ALL USING (user_id = auth.uid())
 -- Added to supabase_realtime publication (NotificationBell uses live subscription)
+-- reactor_display_name is scrubbed to 'Someone' on account deletion (see /api/users/account DELETE handler)
 ```
 
 ## reactions

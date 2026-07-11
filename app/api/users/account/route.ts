@@ -43,6 +43,15 @@ export async function DELETE() {
   }
 
   const admin = createAdminClient()
+
+  // Scrub reactor name from notifications where this user reacted before the
+  // users row is deleted (ON DELETE SET NULL will null reactor_id; this preserves
+  // a display-safe name in reactor_display_name so historical notifications still render).
+  await admin
+    .from('notifications')
+    .update({ reactor_display_name: 'Someone' })
+    .eq('reactor_id', user.id)
+
   // Delete the users row first (cascades to submissions), then the auth entry.
   await admin.from('users').delete().eq('id', user.id)
   await admin.auth.admin.deleteUser(user.id)

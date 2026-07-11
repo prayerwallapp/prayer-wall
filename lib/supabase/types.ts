@@ -17,7 +17,7 @@ export type SubmissionVisibility = 'public' | 'private'
 export type SubmissionPriority = 'normal' | 'urgent'
 export type KeywordAction = 'hold' | 'escalate'
 export type ReactionEmoji = 'prayer' | 'praise' | 'heart'
-export type NotificationType = 'prayer' | 'update'
+export type NotificationType = 'prayer' | 'praise' | 'update'
 
 export type ChurchRow = {
   id: string
@@ -77,6 +77,9 @@ export type SubmissionRow = {
   // session7.sql
   update_used?: boolean | null
   related_submission_id?: string | null
+  // session14.sql — per-submission email rate-limit window
+  email_window_started_at?: string | null
+  email_window_count?: number | null
   created_at: string
 }
 
@@ -133,6 +136,9 @@ export type NotificationRow = {
   prayer_count: number
   read: boolean
   email_sent: boolean
+  // session14.sql — reactor identity snapshot at reaction time
+  reactor_id?: string | null
+  reactor_display_name?: string | null
   created_at: string
   updated_at: string
 }
