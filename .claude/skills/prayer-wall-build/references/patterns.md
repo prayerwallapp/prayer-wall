@@ -287,10 +287,12 @@ export async function POST(req: NextRequest) {
 ```
 
 ```ts
-// lib/email/send-prayer-notification.ts
-// reactor name for email: church.hide_member_names → 'A member of your church family', else reactor.display_name ?? 'Someone'
-// (deliberately longer than in-app "Someone" to match email tone — these are intentionally different)
-await sendPrayerNotificationEmail(owner, notif, reactor, kind)
+// lib/email/send-prayer-notification.ts — Session 14/14b reconciliation:
+// Email reads reactor_display_name from the stored notification snapshot (not a live re-query of
+// hide_member_names or reactor.display_name). The snapshot already applied hide_member_names at
+// reaction time, so email and in-app display are consistent by construction.
+// Signature: sendPrayerNotificationEmail(owner, notif, kind) — no reactor arg needed.
+await sendPrayerNotificationEmail(owner, notif, kind)
 ```
 
 **Session 14 additions:**
@@ -315,6 +317,36 @@ await admin.from('users').delete().eq('id', user.id)
 // Check userProfileRef.current before firing fetch. If null → open sign-in modal, return early.
 // Server independently returns 401 for unauthenticated requests (not relying on client gate alone).
 // On 401 response: roll back optimistic count increment, open sign-in modal.
+```
+
+**Session 14b — Notification bell rendering (NotificationBell.tsx):**
+
+```ts
+// components/notifications/NotificationBell.tsx
+// reactionText() reads n.reactor_display_name from the stored snapshot.
+// Fallback to 'Someone' when null (defensive; post-login-gate this shouldn't happen).
+function reactionText(n: NotificationRow): string {
+  const name = n.reactor_display_name ?? 'Someone'
+  const others = n.prayer_count - 1
+  const othersLabel = others === 1 ? '1 other' : `${others} others`
+
+  if (n.type === 'prayer') {
+    return n.prayer_count === 1
+      ? `${name} is praying for you`
+      : `${name} and ${othersLabel} are praying for you`
+  }
+  if (n.type === 'praise') {
+    return n.prayer_count === 1
+      ? `${name} is celebrating with you`
+      : `${name} and ${othersLabel} are celebrating with you`
+  }
+  return 'New update on your submission'
+}
+
+// Multi-reactor format (judgment call): shows the MOST RECENT reactor's name with "and N others"
+// for earlier reactors. prayer_count > 1: "Noah and 1 other are praying for you".
+// The 'praise' type is now explicitly handled (was falling through to the 'update' string before).
+// No toast component exists in the codebase — the session 14 brief referenced one that was never built.
 ```
 
 ---

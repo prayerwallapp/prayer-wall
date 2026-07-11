@@ -10,8 +10,7 @@ const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? 'Prayer Wall <noreply@pra
 
 export async function sendPrayerNotificationEmail(
   owner: Pick<UserRow, 'email' | 'display_name'>,
-  notif: Pick<NotificationRow, 'church_id' | 'prayer_count'>,
-  reactor: { id: string; display_name: string | null },
+  notif: Pick<NotificationRow, 'church_id' | 'prayer_count' | 'reactor_display_name'>,
   kind: 'prayer' | 'praise'
 ): Promise<void> {
   const resend = new Resend(process.env.RESEND_API_KEY)
@@ -19,17 +18,16 @@ export async function sendPrayerNotificationEmail(
 
   const { data: church } = await admin
     .from('churches')
-    .select('name, logo_url, brand_color, subdomain, hide_member_names')
+    .select('name, logo_url, brand_color, subdomain')
     .eq('id', notif.church_id)
     .single()
 
   if (!church) return
 
-  // Respect hide_member_names: if true, anonymise the reactor.
-  const reactorName =
-    church.hide_member_names
-      ? 'A member of your church family'
-      : reactor.display_name ?? 'Someone'
+  // Use the stored snapshot — hide_member_names was already applied when the
+  // notification was written (storing 'Someone' when hidden, real name otherwise).
+  // This keeps email and in-app display consistent by construction.
+  const reactorName = notif.reactor_display_name ?? 'Someone'
 
   const subject =
     kind === 'praise'

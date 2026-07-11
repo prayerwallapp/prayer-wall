@@ -4,6 +4,24 @@ import { useEffect, useRef, useState } from 'react'
 import { createBrowserClient } from '@supabase/ssr'
 import type { NotificationRow } from '@/lib/supabase/types'
 
+function reactionText(n: NotificationRow): string {
+  const name = n.reactor_display_name ?? 'Someone'
+  const others = n.prayer_count - 1
+  const othersLabel = others === 1 ? '1 other' : `${others} others`
+
+  if (n.type === 'prayer') {
+    return n.prayer_count === 1
+      ? `${name} is praying for you`
+      : `${name} and ${othersLabel} are praying for you`
+  }
+  if (n.type === 'praise') {
+    return n.prayer_count === 1
+      ? `${name} is celebrating with you`
+      : `${name} and ${othersLabel} are celebrating with you`
+  }
+  return 'New update on your submission'
+}
+
 function NotificationDropdown({
   notifications,
   onOpen,
@@ -35,15 +53,13 @@ function NotificationDropdown({
               n.read ? 'bg-white' : 'bg-zinc-50'
             }`}
           >
-            {n.type === 'prayer' ? (
-              <p className="text-sm text-zinc-800">
-                🙏{' '}
-                {n.prayer_count === 1
-                  ? 'Someone is praying for you'
-                  : `${n.prayer_count} people are praying for you`}
-              </p>
-            ) : (
+            {n.type === 'update' ? (
               <p className="text-sm text-zinc-800">📝 New update on your submission</p>
+            ) : (
+              <p className="text-sm text-zinc-800">
+                {n.type === 'praise' ? '🙌' : '🙏'}{' '}
+                {reactionText(n)}
+              </p>
             )}
             <p className="mt-0.5 text-xs text-zinc-400">
               {new Date(n.created_at).toLocaleString()}

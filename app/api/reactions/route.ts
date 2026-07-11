@@ -232,7 +232,7 @@ async function handlePrayerPraiseNotification({
 
   if (!notif) return
 
-  await sendPrayerNotificationEmail(owner, notif, reactor, kind)
+  await sendPrayerNotificationEmail(owner, notif, kind)
 
   if (!wasEmailSent) {
     await admin
