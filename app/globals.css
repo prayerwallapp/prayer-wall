@@ -25,6 +25,14 @@ body {
   animation: burst 0.6s ease-out forwards;
 }
 
+/* Marketing landing page — hero wall card pulse animation */
+@keyframes breathe {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 rgba(159,225,203,0); }
+  50% { transform: scale(1.015); box-shadow: 0 0 0 6px rgba(159,225,203,0.12); }
+}
+.wall-card-breathe { animation: breathe 4.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .wall-card-breathe { animation: none; } }
+
 /* Display app (app/display): slow vertical auto-scroll through overflowing
    submissions, pure CSS — the track is rendered twice for a seamless loop. */
 @keyframes display-scroll {

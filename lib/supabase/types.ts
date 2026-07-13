@@ -108,6 +108,14 @@ export type WaitlistRow = {
   created_at: string
 }
 
+// session16.sql
+export type WaitlistSignupRow = {
+  id: string
+  email: string
+  source: string
+  created_at: string
+}
+
 export type EscalationContactRow = {
   id: string
   church_id: string
@@ -197,6 +205,12 @@ export type Database = {
         Row: WaitlistRow
         Insert: Partial<WaitlistRow> & Pick<WaitlistRow, 'email'>
         Update: Partial<WaitlistRow>
+        Relationships: []
+      }
+      waitlist_signups: {
+        Row: WaitlistSignupRow
+        Insert: Partial<WaitlistSignupRow> & Pick<WaitlistSignupRow, 'email'>
+        Update: Partial<WaitlistSignupRow>
         Relationships: []
       }
       submission_updates: {
