@@ -5,6 +5,8 @@ import './globals.css'
 import { getChurchContext } from '@/lib/church-context'
 import { getLabels } from '@/lib/labels'
 import { getContrastForeground } from '@/lib/theme/contrast'
+import { ToastProvider } from '@/lib/toast'
+import { ToastViewport } from '@/components/ui/Toast'
 
 const lexend = Lexend({
   subsets: ['latin'],
@@ -67,7 +69,10 @@ export default async function RootLayout({
           } as React.CSSProperties
         }
       >
-        {children}
+        <ToastProvider>
+          {children}
+          <ToastViewport />
+        </ToastProvider>
       </body>
     </html>
   )

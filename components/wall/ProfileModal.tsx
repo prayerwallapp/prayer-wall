@@ -8,6 +8,18 @@ import { Avatar, type UserProfile } from './ProfileMenu'
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024 // 2MB — mirrored server-side in /api/users/avatar
 
+// Canonical save confirmation chip (Figma 78:6). Replaces per-section ad-hoc strings.
+function SavedChip() {
+  return (
+    <div className="flex items-center gap-[6px]">
+      <div className="flex size-[14px] shrink-0 items-center justify-center rounded-full bg-success">
+        <span className="text-[9px] font-semibold text-white leading-none font-body">✓</span>
+      </div>
+      <span className="text-caption font-semibold text-success font-body">Saved</span>
+    </div>
+  )
+}
+
 type Props = {
   profile: UserProfile
   onClose: () => void
@@ -255,8 +267,8 @@ function NameSection({
           {status === 'saving' ? 'Saving…' : 'Save'}
         </button>
       </form>
-      {status === 'saved' && <p className="text-sm text-emerald-600">Saved ✓</p>}
-      {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
+      {status === 'saved' && <SavedChip />}
+      {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
 
       <div className="relative" title="Email cannot be changed">
         <input
@@ -526,8 +538,8 @@ function PasswordSection({ email }: { email: string }) {
           autoComplete="new-password"
           className="min-h-[44px] rounded-md border border-zinc-300 px-3 text-sm"
         />
-        {status === 'error' && <p className="text-sm text-red-600">{errorMessage}</p>}
-        {status === 'saved' && <p className="text-sm text-emerald-600">Password updated ✓</p>}
+        {status === 'error' && <p className="text-body-sm text-danger">{errorMessage}</p>}
+        {status === 'saved' && <SavedChip />}
         <button
           type="submit"
           disabled={status === 'saving'}
