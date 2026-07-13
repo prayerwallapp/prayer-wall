@@ -293,7 +293,7 @@ function WallPreview() {
           const color = card.type === 'prayer' ? TOKENS.prayerDeep : TOKENS.praiseDeep
           const emoji = card.type === 'prayer' ? '🙏' : '🙌'
           return (
-            <div key={i} className={`rounded-xl border border-l-4 bg-[#FBFCFE] p-3.5 ${i === 1 ? 'wall-card-breathe' : ''}`} style={{ borderColor: TOKENS.border, borderLeftColor: color }}>
+            <div key={i} className={`rounded-xl border border-l-4 bg-[#FBFCFE] p-3.5 ${i === 1 ? 'wall-card-breathe' : ''} ${i >= 2 ? 'hidden sm:block' : ''}`} style={{ borderColor: TOKENS.border, borderLeftColor: color }}>
               <p className="text-[13px] leading-snug" style={{ color: TOKENS.ink }}>{card.text}</p>
               <div className="mt-2.5 flex items-center justify-between">
                 <span className="text-[11px] font-medium" style={{ color: TOKENS.inkSoft }}>{card.name}</span>
@@ -315,7 +315,7 @@ export default function WaitlistLandingPage() {
       <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6">
         {/* HERO BANNER, contained, icy-blue gradient, nav inside */}
         <section
-          className="relative overflow-hidden rounded-[36px] px-6 pb-40 pt-6 text-white sm:px-10 sm:pb-56 sm:pt-8"
+          className="relative overflow-hidden rounded-[36px] px-6 pb-8 pt-6 text-white sm:px-10 sm:pb-56 sm:pt-8"
           style={{ background: 'linear-gradient(180deg, #5B9FE6 0%, #7DB8F0 35%, #BFE0FB 75%, #F4FAFF 100%)' }}
         >
           <nav className="flex items-center justify-between">
@@ -351,7 +351,7 @@ export default function WaitlistLandingPage() {
           </div>
 
           {/* wall preview card overflowing the bottom edge of the banner */}
-          <div className="absolute inset-x-0 -bottom-6 px-6 sm:-bottom-16 sm:px-16">
+          <div className="relative mt-10 sm:absolute sm:inset-x-0 sm:-bottom-16 sm:mt-0 sm:px-16">
             <div className="mx-auto max-w-3xl">
               <WallPreview />
             </div>
