@@ -363,25 +363,27 @@ All frontend strings must be defined in a constants/config file from day one —
 
 ---
 
-## Design System (Sessions 9–13)
+## Design System (Sessions 9–17)
 
-**Status: functionally complete for all surfaces with an existing Figma design, and for all no-design-needed surfaces.** Only 4 items remain genuinely blocked on new design work (below).
+**Status: complete.** All designed surfaces migrated, all NO_DESIGN blockers resolved.
 
 - Token layer: `app/tokens.css` + Tailwind theme extension, Lexend/Inter fonts
-- Figma source file: `utGO9go3xjfNUC0N6yIbzM`
+- Figma source file: `utGO9go3xjfNUC0N6yIbzM` — full component audit completed Session 16 (2026-07-17), file declared ready for code handoff. Component map lives at `.claude/skills/prayer-wall-build/references/patterns.md` (Figma → Code Component Map section).
 - WCAG contrast utility: `lib/theme/contrast.ts`, verified against 8+ hex values including edge cases
 - Semantic status tokens: `--color-status-success/-warning/-danger` (bg+text pairs)
 - Surface audit: `docs/ui-audit-2026-07-10.md` — every route classified MIGRATED / HAS_DESIGN+NOT_MIGRATED / NO_DESIGN
 
-**Remaining NO_DESIGN blockers — active work item ("Figma Components Work List"):**
-1. **ProfileModal** — photo upload, name, password, notifications, GDPR sections
-2. **NotificationBell + dropdown** — blocked on a product decision (what triggers a notification), not just UI, before design makes sense
-3. **Landing page + WaitlistForm** — marketing surface, likely different design context/owner than the app itself
-4. **Toast/notification system** — global vs. per-surface undecided
-
 **Surfaces built straight-to-code (no new Figma needed), Session 12:** Admin keyword rules page, Admin digest settings page, Auth reset form, Embed wall + SubmissionsGrid, Error boundaries/404 pages, reusable UpgradePrompt component.
 
 **Front-facing email sweep (Session 13):** all instances of `josiah@santehouse.co` / `prayerwall@santehouse.co` in user-facing UI (UpgradePrompt, Terms of Service, Privacy Policy) replaced with `support@prayerwallapp.com`. Confirmed display-only — does not touch auth/session/Resend/backend config.
+
+**Session 14:** Notification system v2 — `notifications` table, reactor identity snapshot (`reactor_display_name` denormalised at reaction time, respecting `hide_member_names`), email rate limiting (3 per 30-min window), in-app only for heart reactions, login gate for reactions, account-deletion scrub of reactor_display_name. `NotificationBell.tsx` implemented with real-time Supabase subscription.
+
+**Session 15:** Toast system (`components/ui/Toast.tsx`, `lib/toast` hook, `ToastViewport`), NotificationBell restyle to Figma spec, `ProfileModal.tsx` Option A (photo upload, display name, password, notifications, privacy/GDPR), `SavedChip` component, `NotificationBell/Trigger` dot conditional verified.
+
+**Session 16:** Waitlist landing page (`app/page.tsx` root, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed.
+
+**Session 17:** `Button/Account` Style=Action + Style=Danger implemented inline in `ProfileModal.tsx` `PrivacySection` using semantic token classes. `NotificationBell` unread-dot suppression (`unreadCount === 0`) verified in Chromium via Puppeteer.
 
 ---
 
@@ -437,7 +439,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 - [x] One-update-per-post limit
 - [x] Praise-report linked-duplicate (functional, minimal UI)
 - [x] Keyword-check enforcement on submission edits (no bypass)
-- [x] Full Figma design system migration for all designed + no-design-needed surfaces (Sessions 9–13)
+- [x] Full Figma design system migration — all surfaces and components (Sessions 9–17)
 
 ## MVP Scope — What's Out
 
@@ -460,7 +462,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 - **`reactions.user_id` cross-tenant exposure** — see Multi-Tenancy section above. Accepted MVP risk, needs staging Supabase to fix safely.
 - **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
 - **Preview deploys broken** — missing env vars in Vercel's Preview environment, by design until a staging Supabase project exists. Verified work goes straight to `main` after real localhost + production checks (no staging branch workflow yet).
-- **4 NO_DESIGN UI surfaces** — see Design System section above.
+- ~~4 NO_DESIGN UI surfaces~~ — resolved in Sessions 14–17. See Design System section.
 
 ---
 
@@ -504,9 +506,9 @@ Reason is visible to moderator in the inbox to explain the flag.
 - Corporate/event use case — separate brand (`Studio` tier or entirely new product)
 - Comments/replies on submissions — competitive gap vs PrayerPlatform.org, deliberately out of MVP, revisit post-launch
 - First test/demo church — identify a real church to onboard for beta (privacy policy/ToS attorney review must land before this)
-- Toast system architecture (global vs. per-surface) — see Design System section
-- NotificationBell trigger scope — product decision needed before that surface can be designed
+- ~~Toast system architecture~~ — resolved Session 15: global Toast via `lib/toast` hook + `ToastViewport` in wall root
+- ~~NotificationBell trigger scope~~ — resolved Session 14: prayer/praise reactions trigger notification (email + in-app); heart is in-app only
 
 ---
 
-*Last updated: Session 13 + reconciliation pass (current). Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
+*Last updated: Session 17 (2026-07-19). Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
