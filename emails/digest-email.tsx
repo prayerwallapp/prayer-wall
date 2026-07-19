@@ -64,7 +64,7 @@ export default function DigestEmail({
     <Html>
       <Head />
       <Preview>{previewText}</Preview>
-      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Inter, Helvetica, Arial, sans-serif' }}>
         <Container
           style={{
             backgroundColor: '#ffffff',

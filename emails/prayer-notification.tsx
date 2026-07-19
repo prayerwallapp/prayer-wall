@@ -47,7 +47,7 @@ export default function PrayerNotificationEmail({
     <Html>
       <Head />
       <Preview>{actionText} at {churchName}</Preview>
-      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Inter, Helvetica, Arial, sans-serif' }}>
         <Container
           style={{
             backgroundColor: '#ffffff',

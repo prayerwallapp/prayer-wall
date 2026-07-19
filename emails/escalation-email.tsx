@@ -31,7 +31,7 @@ export default function EscalationEmail({
     <Html>
       <Head />
       <Preview>Urgent: a submission at {churchName} needs immediate review</Preview>
-      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Helvetica, Arial, sans-serif' }}>
+      <Body style={{ backgroundColor: '#f4f4f5', fontFamily: 'Inter, Helvetica, Arial, sans-serif' }}>
         <Container
           style={{
             backgroundColor: '#ffffff',
