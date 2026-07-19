@@ -401,7 +401,7 @@ function PrivacySection({ onClose }: { onClose: () => void }) {
       <button
         type="button"
         onClick={handleDownload}
-        className="min-h-[44px] rounded-md border border-zinc-300 px-4 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+        className="min-h-[44px] w-full rounded-full border border-border bg-card px-5 py-[10px] text-label font-medium text-secondary hover:bg-page"
       >
         Download my data
       </button>
@@ -410,7 +410,7 @@ function PrivacySection({ onClose }: { onClose: () => void }) {
         <button
           type="button"
           onClick={() => setShowDeleteConfirm(true)}
-          className="min-h-[44px] rounded-md border border-red-200 px-4 text-sm font-medium text-red-600 hover:bg-red-50"
+          className="min-h-[44px] w-full rounded-full bg-danger px-5 py-[10px] text-label font-medium text-danger-on"
         >
           Delete my account
         </button>

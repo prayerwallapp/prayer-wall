@@ -499,3 +499,143 @@ const labels = getLabels(church.label_overrides)
 <h1>{labels.wall_title}</h1>
 <button>{labels.submit_button}</button>
 ```
+
+---
+
+## Figma → Code Component Map
+
+> Figma file `utGO9go3xjfNUC0N6yIbzM` — full audit completed Session 16 (2026-07-17). File declared ready for code handoff.
+> Color token hex values live in `app/tokens.css`. Tailwind semantic aliases in `tailwind.config.ts`.
+
+### Button
+
+**Figma:** `Button` — `Size` (Regular | Wide) × `Style` (Primary | Secondary | Outline | Danger), 12 variants.
+**Target:** No extracted component. Inline `<button>` / `<a>` elements with Tailwind utility classes throughout.
+**Style → class mapping:**
+- Primary → `rounded-full bg-brand text-brand-on px-5 py-[10px] text-label font-medium shadow-card`
+- Secondary → `rounded-full bg-card border border-border text-primary px-5 py-[10px] text-label font-medium`
+- Outline → `rounded-full border border-brand text-brand px-5 py-[10px] text-label font-medium` — currently unused in prod, reserved
+- Danger → `rounded-full bg-danger text-danger-on px-5 py-[10px] text-label font-medium`
+- Wide → same style classes + `w-full` (or fixed 332px in onboarding forms)
+
+**When to extract:** extract `components/ui/Button.tsx` if 3+ call sites need the same variant in a single new feature build.
+
+---
+
+### Button/Account
+
+**Figma:** `Button/Account` — `Style=Action | Style=Danger`. Full-width, muted pill, used for data-action affordances inside modals (download data, delete account).
+**Target:** Not yet built. Implement inline in `ProfileModal.tsx` or extract to `components/ui/AccountButton.tsx`.
+**Notes:** Visually distinct from Button — wider, softer visual weight. Action = neutral/muted. Danger = destructive.
+
+---
+
+### Button/Upload
+
+**Figma:** `Button/Upload` — standalone, icon + "Upload photo" label. Used as avatar upload trigger.
+**Target:** Already inline in `ProfileModal.tsx`. No extraction needed.
+
+---
+
+### Badge
+
+**Figma:** `Badge` — `Size` (Large | Small) × `Type` (CAPS | Default | Pill) × `Style` (Prayer | Praise | Neutral | Admin), 10 variants (sparse grid).
+**Target:** No extracted component. Inline chips appear in `SubmissionCard.tsx`, `UpgradePrompt.tsx`, and admin surfaces.
+**Variant → class mapping:**
+- Large/CAPS/Prayer → `bg-prayer-bg text-prayer-text text-caption font-semibold uppercase tracking-wide rounded-full px-2.5 py-0.5`
+- Large/CAPS/Praise → same with `bg-praise-bg text-praise-text`
+- Large/Default/Neutral → `bg-page text-secondary border border-border rounded-full px-2.5 py-0.5 text-caption`
+- Small/Pill/Admin → `bg-brand text-brand-on rounded-full px-2.5 py-0.5 text-caption font-semibold` (e.g. "Pro" chip)
+- Small/Pill/Neutral → `bg-page text-secondary border border-border rounded-full px-2 py-0.5 text-caption`
+
+**When to extract:** extract `components/ui/Badge.tsx` when any new surface needs 3+ badge variants.
+
+---
+
+### ModerationAction
+
+**Figma:** `ModerationAction` — `Action=Approve | Hold | Reject`.
+**Target:** `app/admin/moderation-actions.tsx` — `ModerationActions({ submissionId })` (exists, wired to `POST /api/moderate`).
+**Mapping:**
+- Approve → green confirm; expands to Public/Private sub-choice before committing
+- Hold → amber
+- Reject → red
+**Status:** Complete. Figma component accurately reflects current implementation.
+
+---
+
+### ModerationCard
+
+**Figma:** `ModerationCard` — `Type` (Prayer | Praise) × `Flag` (None | Keyword), 4 variants.
+**Target:** No dedicated component. Admin queue page (`app/admin/page.tsx`) renders submissions inline alongside `ModerationActions`.
+**Flag=Keyword:** displays `submissions.flagged_reason` string (e.g. `Keyword match: "term" (hold)`).
+**When to extract:** extract `components/admin/ModerationCard.tsx` when rebuilding the moderation queue UI.
+
+---
+
+### NotificationBell
+
+**Figma:** 4 separate named components (intentionally not a variant set — they render in different DOM locations):
+
+| Figma component | Maps to |
+|---|---|
+| `NotificationBell/Trigger` | Bell icon + unread count dot — trigger button in wall header |
+| `NotificationBell/Trigger/No Unread` | Bell icon only, no dot — when `unreadCount === 0` |
+| `NotificationBell/Dropdown/Populated` | Notification row list |
+| `NotificationBell/Dropdown/Empty` | "No notifications yet" state |
+| `NotificationBell/Dropdown/Loading` | Skeleton rows |
+
+**Target:** `components/notifications/NotificationBell.tsx` (exists, fully implemented).
+**Trigger/No Unread gap:** The component always renders the bell; the unread dot should be hidden when `unreadCount === 0`. Verify this renders correctly in browser — may need a minor conditional on the dot element.
+
+---
+
+### Toast/Status
+
+**Figma:** `Toast/Status` — `Status=Success | Warning | Danger | Info`, 4 variants.
+**Target:** `components/ui/Toast.tsx` — `ToastViewport` + `SingleToast`, driven by `lib/toast` hook (exists, complete).
+
+| Figma variant | `variant` prop | Tailwind classes | Icon |
+|---|---|---|---|
+| Status=Success | `'success'` | `bg-success text-success-on` | `✓` |
+| Status=Warning | `'warning'` | `bg-warning text-warning-on` | `!` |
+| Status=Danger | `'danger'` | `bg-danger text-danger-on` | `✕` |
+| Status=Info | `'info'` | `bg-card text-primary border border-border` | `🙏` |
+
+**Content note:** emoji and message text are always runtime overrides — there is no Prayer vs. Praise toast variant in code. One `variant: 'info'` covers both.
+**Deprecated:** mid-session Figma variants `Status=Info Prayer` and `Info Praise` — folded back into `Status=Info` before handoff. Do not reference them.
+
+---
+
+### ProfileModal
+
+**Figma:**
+- `ProfileModal Option A` → **MVP** — avatar, display name, notification preferences, SavedChip, Button/Account actions (download data / delete account)
+- `ProfileModal Option B` → **Post-MVP** — tabbed layout with additional sections. Labeled `(Post-MVP)` in Figma.
+
+**Target:** `components/wall/ProfileModal.tsx` (exists, Option A implemented).
+**Do not build Option B until explicitly scoped.**
+
+---
+
+### UpgradePrompt
+
+**Figma:** Standalone component on its own page — card with "Pro" badge, feature name, description, upgrade CTA.
+**Target:** `components/UpgradePrompt.tsx` — props: `feature: string`, `description: string` (exists, complete).
+**CTA:** `mailto:support@prayerwallapp.com?subject=Prayer Wall Pro upgrade`.
+
+---
+
+### SubmissionCard
+
+**Figma:** Wall screen designs (not in library component page — rendered in WallGrid context).
+**Target:** `components/wall/SubmissionCard.tsx` (exists).
+**Size variants:**
+
+| `size` prop | Usage |
+|---|---|
+| `'default'` | Public wall |
+| `'compact'` | Admin queue rows |
+| `'display'` | Kiosk / embed — no interaction props |
+
+**Props:** `submission`, `church`, `labels`, `size?`, `reactions?`, `onReact?`, `currentUserId?`
