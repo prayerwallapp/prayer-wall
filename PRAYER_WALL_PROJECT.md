@@ -363,7 +363,7 @@ All frontend strings must be defined in a constants/config file from day one —
 
 ---
 
-## Design System (Sessions 9–17)
+## Design System (Sessions 9–17 / DESIGN-01..06, BUILD-09..10, MKT-01)
 
 **Status: complete.** All designed surfaces migrated, all NO_DESIGN blockers resolved.
 
@@ -373,17 +373,17 @@ All frontend strings must be defined in a constants/config file from day one —
 - Semantic status tokens: `--color-status-success/-warning/-danger` (bg+text pairs)
 - Surface audit: `docs/ui-audit-2026-07-10.md` — every route classified MIGRATED / HAS_DESIGN+NOT_MIGRATED / NO_DESIGN
 
-**Surfaces built straight-to-code (no new Figma needed), Session 12:** Admin keyword rules page, Admin digest settings page, Auth reset form, Embed wall + SubmissionsGrid, Error boundaries/404 pages, reusable UpgradePrompt component.
+**Surfaces built straight-to-code (no new Figma needed), DESIGN-05 / Session 12:** Admin keyword rules page, Admin digest settings page, Auth reset form (confirmed built and working — renders error for invalid/expired tokens), Embed wall + SubmissionsGrid, Error boundaries/404 pages, reusable UpgradePrompt component.
 
-**Front-facing email sweep (Session 13):** all instances of `josiah@santehouse.co` / `prayerwall@santehouse.co` in user-facing UI (UpgradePrompt, Terms of Service, Privacy Policy) replaced with `support@prayerwallapp.com`. Confirmed display-only — does not touch auth/session/Resend/backend config.
+**Front-facing email sweep, DESIGN-05 / Session 13:** all instances of `josiah@santehouse.co` / `prayerwall@santehouse.co` in user-facing UI (UpgradePrompt, Terms of Service, Privacy Policy) replaced with `support@prayerwallapp.com`. Confirmed display-only — does not touch auth/session/Resend/backend config.
 
-**Session 14:** Notification system v2 — `notifications` table, reactor identity snapshot (`reactor_display_name` denormalised at reaction time, respecting `hide_member_names`), email rate limiting (3 per 30-min window), in-app only for heart reactions, login gate for reactions, account-deletion scrub of reactor_display_name. `NotificationBell.tsx` implemented with real-time Supabase subscription.
+**BUILD-09 / Session 14:** Notification system v2 — `notifications` table, reactor identity snapshot (`reactor_display_name` denormalised at reaction time, respecting `hide_member_names`), email rate limiting (3 per 30-min window), in-app only for heart reactions, login gate for reactions, account-deletion scrub of reactor_display_name. `NotificationBell.tsx` implemented with real-time Supabase subscription.
 
-**Session 15:** Toast system (`components/ui/Toast.tsx`, `lib/toast` hook, `ToastViewport`), NotificationBell restyle to Figma spec, `ProfileModal.tsx` Option A (photo upload, display name, password, notifications, privacy/GDPR), `SavedChip` component, `NotificationBell/Trigger` dot conditional verified.
+**BUILD-10 / Session 15:** Toast system (`components/ui/Toast.tsx`, `lib/toast` hook, `ToastViewport`), NotificationBell restyle to Figma spec, `ProfileModal.tsx` Option A (photo upload, display name, password, notifications, privacy/GDPR), `SavedChip` component, `NotificationBell/Trigger` dot conditional verified.
 
-**Session 16:** Waitlist landing page (`app/page.tsx` root, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed.
+**MKT-01 / Session 16:** Waitlist landing page (`app/(marketing)/landing/page.tsx` routed from root via middleware, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed. Note: live page implements 4 of 8 feature cards specified in `docs/landing-page-copy-locked.md` — see SESSION_LOG.md MKT-01 row for gap details.
 
-**Session 17:** `Button/Account` Style=Action + Style=Danger implemented inline in `ProfileModal.tsx` `PrivacySection` using semantic token classes. `NotificationBell` unread-dot suppression (`unreadCount === 0`) verified in Chromium via Puppeteer.
+**DESIGN-06 / Session 17:** `Button/Account` Style=Action + Style=Danger implemented inline in `ProfileModal.tsx` `PrivacySection` using semantic token classes. Full Figma → Code Component Map added to `patterns.md`. Email font stack fixed (`Inter, ` prepended to all 3 transactional email templates). `NotificationBell` unread-dot suppression (`unreadCount === 0`) verified in Chromium via Puppeteer.
 
 ---
 
@@ -506,9 +506,10 @@ Reason is visible to moderator in the inbox to explain the flag.
 - Corporate/event use case — separate brand (`Studio` tier or entirely new product)
 - Comments/replies on submissions — competitive gap vs PrayerPlatform.org, deliberately out of MVP, revisit post-launch
 - First test/demo church — identify a real church to onboard for beta (privacy policy/ToS attorney review must land before this)
-- ~~Toast system architecture~~ — resolved Session 15: global Toast via `lib/toast` hook + `ToastViewport` in wall root
-- ~~NotificationBell trigger scope~~ — resolved Session 14: prayer/praise reactions trigger notification (email + in-app); heart is in-app only
+- ~~Toast system architecture~~ — resolved BUILD-10 / Session 15: global Toast via `lib/toast` hook + `ToastViewport` in wall root
+- ~~NotificationBell trigger scope~~ — resolved BUILD-09 / Session 14: prayer/praise reactions trigger notification (email + in-app); heart is in-app only
+- **Follow-up tools for pastoral teams** — lightweight care-tracking (who needs a call or visit) attached to a submission, surfaced from the moderation inbox. No schema exists yet. Referenced publicly as "Coming soon" in marketing copy (`docs/landing-page-copy-locked.md`), but NOT yet implemented in code — verified 2026-07-20 that this feature card is absent from the live `FEATURES` array in `app/(marketing)/landing/page.tsx`. The locked copy doc contained a false claim that this was "now live as a 'Coming soon' feature card." Decision needed: build the feature card first (quick), or ship the full care-tracking schema first?
 
 ---
 
-*Last updated: Session 17 (2026-07-19). Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
+*Last updated: DOC-01 / Session 18 (2026-07-20) — see SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
