@@ -170,7 +170,7 @@ CREATE INDEX idx_reactions_user ON reactions(user_id);
 **RLS (session19.sql — replaced the original `reactions_public_read` USING(true) policy):**
 - `reactions_select_public` — FOR SELECT USING (submission_id IN (SELECT id FROM submissions WHERE status = 'approved' AND visibility = 'public')). Applies to anon + authenticated. Mirrors `submissions_public_read_approved`. Does not filter by church_id — approved+public reactions are public data; anon has no session-based church context.
 - `reactions_select_own_church` — FOR SELECT USING (church_id = public.auth_user_church_id()). Authenticated users only. Gives admins/moderators visibility into their church's reactions at any submission status. Uses SECURITY DEFINER helper (migration 002) to avoid RLS recursion. Must use `public.` prefix — SQL Editor's search_path doesn't resolve the bare name.
-- `reactions_public_insert` — FOR INSERT WITH CHECK (true). **Vestigial** — created in session2.sql, not removed in session19. App inserts (`POST /api/reactions`) use the service role and bypass RLS. Embed inserts use the `insert_embed_reaction` RPC. This policy allows direct anon INSERT via REST API, bypassing server-side validation — consider tightening in a follow-up.
+- ~~`reactions_public_insert`~~ — **Dropped in session19.sql.** Was FOR INSERT WITH CHECK (true) (session2.sql). Closing it was required before shipping `insert_embed_reaction` — anon could have bypassed the RPC's validation by posting directly to the REST API.
 
 **Embed insert note:** Never add a direct INSERT policy for anon. All anonymous reactions (from the embed iframe) must go through `insert_embed_reaction` (SECURITY DEFINER) so the function can enforce embed_enabled, status+visibility, and emoji validation atomically.
 
