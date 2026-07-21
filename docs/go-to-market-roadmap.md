@@ -64,6 +64,14 @@ parallel with marketing work, but don't onboard a real church until both are don
 7. Nav logo / real branding, once designed.
 8. Decide the problem-framing strip.
 9. Real-device mobile QA on the new 8-card tools grid.
+10. **Full copy audit against locked spec** — the feature-card gap fix (BUILD-11,
+    2026-07-20) surfaced broader drift: hero subheadline, hero disclaimer, features
+    headline/subcopy, card 3 body, card 7 pill text, the steps section (entirely
+    different content — submission flow vs. onboarding flow), FAQ Q4, and the
+    "Always Free" pricing feature list all diverge from `landing-page-copy-locked.md`.
+    Needs a dedicated MKT session: page-by-page reconciliation against the locked
+    doc, not a quick patch. See BUILD-11 session notes in SESSION_LOG.md for the
+    full drift table.
 
 ---
 

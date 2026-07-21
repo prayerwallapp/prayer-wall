@@ -80,7 +80,7 @@ Prayer Wall digitises this workflow in a way that feels alive — real people, r
 ### Multi-Tenancy
 Single codebase, single database, single deployment. Every table includes a `church_id` column. Row Level Security (RLS) policies in Supabase enforce data isolation at the database level — not just application level. A church can never access another church's data even if app-level filtering fails.
 
-**Known limitation — `reactions.user_id` cross-tenant exposure (accepted, MVP):** The `reactions` table is intentionally world-readable via the anon key so anonymous realtime reaction counts work. `reactions.user_id` (reactor identity) means reactor UUIDs are visible to any authenticated user regardless of church, and to the anon key via the REST API. A `REVOKE SELECT (user_id) ON reactions FROM anon, authenticated` was attempted but is a no-op: Supabase's table-level `GRANT SELECT ON reactions TO anon` cannot be overridden by a column-level REVOKE. The correct fix — revoke the table-level grant and re-grant column-by-column — requires a staging Supabase project to test safely, since a mistake would break live reaction counts for all churches. **Accepted for MVP**: the exposure is low-severity (random UUIDs only; the `users` table RLS prevents resolving any UUID to a name or email). Revisit when a staging environment exists.
+**`reactions` RLS — cross-status/cross-church SELECT leak (fixed Session 19 / 2026-07-21, pending production deploy):** The original `reactions_public_read` policy used `USING (true)` — world-readable, no submission-status or church scoping. This allowed the anon key to read reactions on `pending`/`held` submissions (cross-status leak) and on any church's submissions (cross-church). **Fixed in `20260721_reactions_rls_and_embed_prep.sql`:** dropped `reactions_public_read` and replaced with two policies: (1) `reactions_select_public` — anon and authenticated can SELECT reactions where `submission_id IN (SELECT id FROM submissions WHERE status = 'approved' AND visibility = 'public')` — mirrors the `submissions_public_read_approved` policy, same scoping philosophy; (2) `reactions_select_own_church` — authenticated users can SELECT reactions where `church_id = auth_user_church_id()` (own church, any status — needed for admin moderation inbox and notification flows). **Residual exposure (accepted, low-severity):** `user_id` (reactor UUID) is still visible on approved+public submissions' reactions, to any anon caller. `users` table RLS prevents resolving a UUID to identity (name/email). This was the original accepted MVP risk — it remains accepted post-fix, and is now narrower (approved+public only, not all-submissions). **Judgment call — church_id scoping of approved reads:** the public SELECT policy scopes by status+visibility only, not by church_id. Anon has no session-based church context to scope against, and approved+public reactions are public data by definition. Confirmed consistent with `submissions_public_read_approved`. Josiah to confirm before production deploy.
 
 ### Routing
 Churches are identified by subdomain: `{church}.prayerwallapp.com`. Subdomain is resolved at the Next.js middleware level to look up the `church_id` and inject church context into every request. Custom domain mapping (church brings their own domain) is a future Pro feature.
@@ -368,7 +368,7 @@ All frontend strings must be defined in a constants/config file from day one —
 **Status: complete.** All designed surfaces migrated, all NO_DESIGN blockers resolved.
 
 - Token layer: `app/tokens.css` + Tailwind theme extension, Lexend/Inter fonts
-- Figma source file: `utGO9go3xjfNUC0N6yIbzM` — full component audit completed Session 16 (2026-07-17), file declared ready for code handoff. Component map lives at `.claude/skills/prayer-wall-build/references/patterns.md` (Figma → Code Component Map section).
+- Figma source file: `utGO9go3xjfNUC0N6yIbzM` — full component audit completed DESIGN-06 / Session 17 (2026-07-17..19), file declared ready for code handoff. Component map lives at `.claude/skills/prayer-wall-build/references/patterns.md` (Figma → Code Component Map section).
 - WCAG contrast utility: `lib/theme/contrast.ts`, verified against 8+ hex values including edge cases
 - Semantic status tokens: `--color-status-success/-warning/-danger` (bg+text pairs)
 - Surface audit: `docs/ui-audit-2026-07-10.md` — every route classified MIGRATED / HAS_DESIGN+NOT_MIGRATED / NO_DESIGN
@@ -381,7 +381,7 @@ All frontend strings must be defined in a constants/config file from day one —
 
 **BUILD-10 / Session 15:** Toast system (`components/ui/Toast.tsx`, `lib/toast` hook, `ToastViewport`), NotificationBell restyle to Figma spec, `ProfileModal.tsx` Option A (photo upload, display name, password, notifications, privacy/GDPR), `SavedChip` component, `NotificationBell/Trigger` dot conditional verified.
 
-**MKT-01 / Session 16:** Waitlist landing page (`app/(marketing)/landing/page.tsx` routed from root via middleware, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed. Note: live page implements 4 of 8 feature cards specified in `docs/landing-page-copy-locked.md` — see SESSION_LOG.md MKT-01 row for gap details.
+**MKT-01 / Session 16:** Waitlist landing page (`app/(marketing)/landing/page.tsx` routed from root via middleware, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed. Note: BUILD-11 brought live page to 7 of 8 feature cards per `docs/landing-page-copy-locked.md` — "Follow-up tools for pastoral teams" intentionally withheld (product decision pending, no schema exists). See SESSION_LOG.md MKT-01 row.
 
 **DESIGN-06 / Session 17:** `Button/Account` Style=Action + Style=Danger implemented inline in `ProfileModal.tsx` `PrivacySection` using semantic token classes. Full Figma → Code Component Map added to `patterns.md`. Email font stack fixed (`Inter, ` prepended to all 3 transactional email templates). `NotificationBell` unread-dot suppression (`unreadCount === 0`) verified in Chromium via Puppeteer.
 
@@ -459,7 +459,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 ## Known Open Issues
 
-- **`reactions.user_id` cross-tenant exposure** — see Multi-Tenancy section above. Accepted MVP risk, needs staging Supabase to fix safely.
+- **`reactions` SELECT cross-status/cross-church leak + vestigial anon INSERT** — migration written in Session 19 (`20260721_reactions_rls_and_embed_prep.sql`). Step 3 verification was blocked by missing tooling (Supabase CLI, psql) and disk at 131 MB free. NOT verified, NOT resolved. Session 19b is re-running verification now that disk space has been cleared. Do not re-mark resolved until Step 2 of Session 19b completes with real psql output.
 - **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
 - **Preview deploys broken** — missing env vars in Vercel's Preview environment, by design until a staging Supabase project exists. Verified work goes straight to `main` after real localhost + production checks (no staging branch workflow yet).
 - ~~4 NO_DESIGN UI surfaces~~ — resolved in Sessions 14–17. See Design System section.
@@ -512,4 +512,4 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 ---
 
-*Last updated: DOC-01 / Session 18 (2026-07-20) — see SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
+*Last updated: Session 19 / BUILD-12 (2026-07-21) — see SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*

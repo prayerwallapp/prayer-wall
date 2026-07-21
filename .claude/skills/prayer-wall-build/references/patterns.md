@@ -504,7 +504,7 @@ const labels = getLabels(church.label_overrides)
 
 ## Figma → Code Component Map
 
-> Figma file `utGO9go3xjfNUC0N6yIbzM` — full audit completed Session 16 (2026-07-17). File declared ready for code handoff.
+> Figma file `utGO9go3xjfNUC0N6yIbzM` — full audit completed DESIGN-06 / Session 17 (2026-07-17..19). File declared ready for code handoff.
 > Color token hex values live in `app/tokens.css`. Tailwind semantic aliases in `tailwind.config.ts`.
 
 ### Button
@@ -636,6 +636,8 @@ const labels = getLabels(church.label_overrides)
 |---|---|
 | `'default'` | Public wall |
 | `'compact'` | Admin queue rows |
-| `'display'` | Kiosk / embed — no interaction props |
+| `'display'` | Defined but currently unused — do not assume dead code without checking callers first |
+
+> **`'display'` is not the embed implementation.** The embed route (`app/(embed)/wall/page.tsx`) uses `SubmissionsGrid`, which renders plain `<article>` elements with inline semantic token classes — it does not use `SubmissionCard` at all. `'display'` variant is defined in `SubmissionCard.tsx` (type union line 13, style block line 68, `isDisplay` check line 252) but nothing currently calls it. Verified 2026-07-20.
 
 **Props:** `submission`, `church`, `labels`, `size?`, `reactions?`, `onReact?`, `currentUserId?`

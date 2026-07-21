@@ -156,13 +156,53 @@ CREATE TABLE reactions (
   id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   submission_id   uuid NOT NULL REFERENCES submissions(id) ON DELETE CASCADE,
   church_id       uuid NOT NULL REFERENCES churches(id) ON DELETE CASCADE,
-  user_id         uuid REFERENCES users(id) ON DELETE SET NULL, -- reactor identity, drives notification naming
+  user_id         uuid REFERENCES users(id) ON DELETE SET NULL, -- reactor identity, drives notification naming; NULL for embed reactions
   emoji           text NOT NULL, -- must be an enabled key in church.reaction_settings, validated server-side
+  -- session19.sql
+  source          text NOT NULL DEFAULT 'app' CHECK (source IN ('app', 'embed')),
+  embed_visitor_id uuid, -- client-generated UUID for dedup in embed iframe; NULL for source='app'
   created_at      timestamptz DEFAULT now()
 );
 
 CREATE INDEX idx_reactions_user ON reactions(user_id);
 ```
+
+**RLS (session19.sql — replaced the original `reactions_public_read` USING(true) policy):**
+- `reactions_select_public` — FOR SELECT USING (submission_id IN (SELECT id FROM submissions WHERE status = 'approved' AND visibility = 'public')). Applies to anon + authenticated. Mirrors `submissions_public_read_approved`. Does not filter by church_id — approved+public reactions are public data; anon has no session-based church context.
+- `reactions_select_own_church` — FOR SELECT USING (church_id = public.auth_user_church_id()). Authenticated users only. Gives admins/moderators visibility into their church's reactions at any submission status. Uses SECURITY DEFINER helper (migration 002) to avoid RLS recursion. Must use `public.` prefix — SQL Editor's search_path doesn't resolve the bare name.
+- `reactions_public_insert` — FOR INSERT WITH CHECK (true). **Vestigial** — created in session2.sql, not removed in session19. App inserts (`POST /api/reactions`) use the service role and bypass RLS. Embed inserts use the `insert_embed_reaction` RPC. This policy allows direct anon INSERT via REST API, bypassing server-side validation — consider tightening in a follow-up.
+
+**Embed insert note:** Never add a direct INSERT policy for anon. All anonymous reactions (from the embed iframe) must go through `insert_embed_reaction` (SECURITY DEFINER) so the function can enforce embed_enabled, status+visibility, and emoji validation atomically.
+
+---
+
+## Functions (RPC)
+
+### `insert_embed_reaction(p_submission_id uuid, p_emoji text, p_visitor_id uuid)`
+**session19.sql — SECURITY DEFINER, anon has EXECUTE**
+
+The only sanctioned path for anonymous reactions from the embed iframe. Validates:
+1. `submission_id` exists, `status = 'approved'`, `visibility = 'public'`
+2. Church has `embed_enabled = true`
+3. `p_emoji` is an enabled key in `church.reaction_settings` (plain boolean check)
+
+Inserts with `user_id = NULL`, `source = 'embed'`, `embed_visitor_id = p_visitor_id`.
+
+anon does NOT get a direct `INSERT` policy — this function is the gate.
+
+```sql
+-- call from embed iframe (anon key):
+SELECT insert_embed_reaction(
+  '<submission_uuid>',
+  'prayer',
+  '<client-generated-visitor-uuid>'
+);
+```
+
+### `auth_user_church_id()`
+**migration 002 — SECURITY DEFINER, anon + authenticated have EXECUTE**
+
+Returns the `church_id` for the currently authenticated user. Used in RLS policies to avoid the infinite-recursion bug that direct `users` subqueries cause. Returns NULL for anon (no session).
 
 ---
 
@@ -179,15 +219,18 @@ ALTER TABLE keyword_rules ENABLE ROW LEVEL SECURITY;
 ALTER TABLE escalation_contacts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE reactions ENABLE ROW LEVEL SECURITY;
 
--- Users can only see their own church's data
-CREATE POLICY "church_isolation" ON submissions
-  FOR ALL USING (
-    church_id = (
-      SELECT church_id FROM users WHERE id = auth.uid()
-    )
-  );
+-- Most tables use the church_isolation pattern via auth_user_church_id() (migration 002).
+-- "church_isolation" was the original name; "church_isolation_submissions" etc. are the
+-- corrected names in 002 that use the SECURITY DEFINER helper to avoid RLS recursion.
+CREATE POLICY "church_isolation_submissions" ON submissions
+  FOR ALL USING (church_id = auth_user_church_id());
+-- Same pattern on keyword_rules, escalation_contacts, users, churches.
 
--- Apply same pattern to keyword_rules, escalation_contacts, reactions, submission_updates
+-- submissions also has a public-read policy (session2, updated session6):
+CREATE POLICY "submissions_public_read_approved" ON submissions
+  FOR SELECT USING (status = 'approved' AND visibility = 'public');
+
+-- reactions has custom policies (see reactions section above — NOT the generic church_isolation pattern)
 -- notifications uses: FOR ALL USING (user_id = auth.uid())
 -- Service role key bypasses RLS for cron jobs and server-side admin operations
 ```

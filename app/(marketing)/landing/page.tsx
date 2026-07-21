@@ -11,6 +11,9 @@ import {
   ArrowRight,
   Quote,
   Send,
+  Heart,
+  Lock,
+  Globe,
 } from 'lucide-react'
 
 // Fonts: Lexend + Inter are loaded by app/layout.tsx via next/font/google.
@@ -57,7 +60,10 @@ const WALL_CARDS = [
 const FEATURES = [
   { icon: Inbox, title: 'Submit in seconds', body: 'A magic link and a quick tap is all it takes to share a prayer request or praise report.', pill: null as string | null, mock: 'submit' as const },
   { icon: Radio, title: 'Live prayer wall', body: 'Approved posts appear instantly in a grid the whole congregation can scroll and react to.', pill: null as string | null, mock: 'wall' as const },
-  { icon: ShieldCheck, title: 'Admin dashboard', body: "Your care team's moderation tools live here. Approve, hold, or escalate every submission, with keyword rules that auto-flag sensitive language.", pill: null as string | null, mock: 'inbox' as const },
+  { icon: ShieldCheck, title: 'Moderation inbox', body: "Your care team's moderation tools live here. Approve, hold, or escalate every submission, with keyword rules that auto-flag sensitive language.", pill: null as string | null, mock: 'inbox' as const },
+  { icon: Heart, title: 'Standing with you', body: "Every reaction is real. When someone prays or celebrates with you, you'll know exactly who.", pill: null as string | null, mock: 'wall' as const },
+  { icon: Lock, title: 'Share only what feels right', body: "Post anonymously if you'd rather stay private. Every submission is reviewed first, and sensitive requests can stay with your care team instead of going public.", pill: null as string | null, mock: 'submit' as const },
+  { icon: Globe, title: 'A home of your own', body: 'Get a page that\'s just for your church, like gracecommunity.prayerwallapp.com, so members always know exactly where to go.', pill: null as string | null, mock: 'wall' as const },
   { icon: MonitorPlay, title: 'Big-screen display', body: 'Put the live wall on your auditorium screens or foyer TVs, auto-scrolling and always current.', pill: 'Coming at launch', mock: 'display' as const },
 ]
 
