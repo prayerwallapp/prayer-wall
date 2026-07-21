@@ -27,6 +27,7 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.staging
 
 # vercel
 .vercel
@@ -40,3 +41,4 @@ next-env.d.ts
 !.claude/skills/prayer-wall-build/
 !.claude/skills/prayer-wall-build/references/
 !.claude/skills/prayer-wall-build/references/**
+.env*

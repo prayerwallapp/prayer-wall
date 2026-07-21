@@ -461,7 +461,7 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 - ~~**`reactions` SELECT cross-status/cross-church leak + vestigial anon INSERT**~~ — resolved Session 19b / BUILD-12 (2026-07-21). Migration applied to production and verified via 8 SQL Editor checks. See Multi-Tenancy section for full detail.
 - **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
-- **Preview deploys broken** — missing env vars in Vercel's Preview environment, by design until a staging Supabase project exists. Verified work goes straight to `main` after real localhost + production checks (no staging branch workflow yet).
+- ~~**Preview deploys broken**~~ — resolved BUILD-13 (2026-07-21). Staging Supabase project (klrxuehjjckbllszedkl) established; all six Preview environment variables wired via Vercel CLI. Preview deploys now route to staging. See `docs/staging-workflow.md`.
 - ~~4 NO_DESIGN UI surfaces~~ — resolved in Sessions 14–17. See Design System section.
 
 ---
