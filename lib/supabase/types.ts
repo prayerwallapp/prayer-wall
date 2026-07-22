@@ -229,6 +229,19 @@ export type Database = {
       }
     }
     Views: Record<string, never>
-    Functions: Record<string, never>
+    Functions: {
+      // session19.sql — SECURITY DEFINER RPC, anon has EXECUTE.
+      // The only sanctioned path for anonymous embed reactions. Validates
+      // approved+public submission, embed_enabled church, and enabled emoji
+      // server-side, then inserts with user_id=NULL, source='embed'.
+      insert_embed_reaction: {
+        Args: {
+          p_submission_id: string
+          p_emoji: string
+          p_visitor_id: string
+        }
+        Returns: undefined
+      }
+    }
   }
 }

@@ -11,9 +11,11 @@
 --   3. Lay DB groundwork for anonymous embed reactions: source column,
 --      embed_visitor_id column, and a SECURITY DEFINER RPC for anon inserts.
 --
--- Frontend wiring (calling insert_embed_reaction from the embed iframe) is
--- explicitly out of scope — that is a fast-follow session.
--- Rate limiting on the embed path (Vercel Edge Middleware) is also deferred.
+-- Frontend wiring (calling insert_embed_reaction from the embed iframe) was
+-- deferred here as a fast-follow — SHIPPED in BUILD-14 (2026-07-21):
+-- components/wall/SubmissionsGrid.tsx + lib/embed/{visitor-id,react}.ts,
+-- staging-verified via real browser click. See PRAYER_WALL_PROJECT.md.
+-- Rate limiting on the embed path (Vercel Edge Middleware) is still deferred.
 --
 -- DOES NOT modify the authenticated reactions insert flow:
 -- POST /api/reactions uses the service role and bypasses RLS entirely.

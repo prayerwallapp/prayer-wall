@@ -638,6 +638,24 @@ const labels = getLabels(church.label_overrides)
 | `'compact'` | Admin queue rows |
 | `'display'` | Defined but currently unused — do not assume dead code without checking callers first |
 
-> **`'display'` is not the embed implementation.** The embed route (`app/(embed)/wall/page.tsx`) uses `SubmissionsGrid`, which renders plain `<article>` elements with inline semantic token classes — it does not use `SubmissionCard` at all. `'display'` variant is defined in `SubmissionCard.tsx` (type union line 13, style block line 68, `isDisplay` check line 252) but nothing currently calls it. Verified 2026-07-20.
+> **`'display'` is not the embed implementation.** The embed route (`app/(embed)/wall/page.tsx`) uses `SubmissionsGrid`, which renders plain `<article>` elements with inline semantic token classes — it does not use `SubmissionCard` at all. `'display'` variant is defined in `SubmissionCard.tsx` (type union line 13, style block line 68, `isDisplay` check line 252) but nothing currently calls it, and it stays interaction-free. Verified 2026-07-20; re-confirmed BUILD-14 (2026-07-21) — the embed reactions work below was deliberately built into `SubmissionsGrid`, NOT `SubmissionCard`, to keep the shared main-wall component untouched.
 
 **Props:** `submission`, `church`, `labels`, `size?`, `reactions?`, `onReact?`, `currentUserId?`
+
+---
+
+### SubmissionsGrid (embed render path)
+
+**Target:** `components/wall/SubmissionsGrid.tsx` — the embed route's own render path. Client component (since BUILD-14). Renders approved+public submissions as plain `<article>` cards and, when the church has reactions enabled, **anonymous embed reactions**.
+
+**Props:** `initialSubmissions`, `churchId`, `labels`, `reactionCounts?`, `enabledEmojis?`
+- `enabledEmojis` is derived server-side in the embed page from `church.reaction_settings` (the same set `insert_embed_reaction` validates against). Empty → no reaction buttons render at all. Null `reaction_settings` → empty (matches what the RPC would reject).
+
+**Embed reaction flow (BUILD-14):**
+- Visitor identity: `lib/embed/visitor-id.ts` → `getEmbedVisitorId()` — `crypto.randomUUID()` persisted in `localStorage['pw_embed_visitor_id']`. First-party to the iframe's Prayer Wall origin.
+- Reaction call: `lib/embed/react.ts` → `submitEmbedReaction(submissionId, emoji, visitorId)` → `supabase.rpc('insert_embed_reaction', …)` via the shared typed browser client (`lib/supabase/client.ts`). anon has EXECUTE; there is NO direct anon INSERT policy — the RPC is the only path.
+- Optimistic increment on click; on RPC error, quiet rollback (no toast inside a third-party iframe).
+- Soft dedup: `localStorage['pw_embed_reacted_{submissionId}']` greys out (disables) an emoji already used by this visitor. Non-tamper-proof by design; the RPC is the real boundary. **Distinct `pw_embed_` key prefix** because the embed (`/wall`) and main wall (`/`) share an origin — must not collide with `SubmissionCard`'s `reacted_{id}` key.
+- **No realtime subscription** — the embed never had one, and the void RPC returns no row id to dedup a realtime echo against, so counts update optimistically for the reactor only. Live cross-visitor counts remain a deliberate non-goal for the embed.
+
+**RPC typing:** `insert_embed_reaction` is declared in `lib/supabase/types.ts` `Database['public']['Functions']` so `.rpc()` is typed.
