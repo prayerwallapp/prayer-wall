@@ -365,7 +365,7 @@ All frontend strings must be defined in a constants/config file from day one —
 
 ---
 
-## Design System (Sessions 9–17 / DESIGN-01..06, BUILD-09..10, MKT-01)
+## Design System (Sessions 9–17, 26 / DESIGN-01..07, BUILD-09..10, MKT-01)
 
 **Status: complete.** All designed surfaces migrated, all NO_DESIGN blockers resolved.
 
@@ -467,6 +467,15 @@ Reason is visible to moderator in the inbox to explain the flag.
 - **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
 - ~~**Preview deploys broken**~~ — resolved BUILD-13 (2026-07-21). Staging Supabase project (klrxuehjjckbllszedkl) established; all six Preview environment variables wired via Vercel CLI. Preview deploys now route to staging. See `docs/staging-workflow.md`.
 - ~~4 NO_DESIGN UI surfaces~~ — resolved in Sessions 14–17. See Design System section.
+- **🔴 Resend `prayerwallapp.com` domain NOT verified — ALL transactional email is failing (root cause of the Session 16 breakage; BLOCKED on DNS, needs Josiah at the registrar).** Confirmed BUILD-16 (2026-07-21) with a real Resend API send from the staging flow: Resend returns **`403 — "The prayerwallapp.com domain is not verified."`** No email (waitlist confirmation, prayer/praise notification, escalation, digest) has been delivering. The app never surfaced this because the Resend SDK returns `{error}` rather than throwing, and the call sites discard it (waitlist route's `.catch` only catches thrown/network errors, not the `{error}` field) — **secondary finding: transactional sends silently swallow Resend errors; worth adding error logging in a follow-up (not fixed this session, out of scope).** Resend domain `id 327d4a1e-c8dd-410a-afe6-4e220232f362`, all 3 required DNS records show `status: failed`. **Exact records to add at the registrar for `prayerwallapp.com` (host shown relative; append `.prayerwallapp.com` if the registrar wants the full name):**
+  | Type | Host/Name | Value | Priority |
+  |---|---|---|---|
+  | TXT (DKIM) | `resend._domainkey` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCvSMb8jbwUeTh5tZFue/fGgQAM3+JyNlXh8+nAab4NlX604rMQ5puchLAoqDBxIaCIJL81F27rNOpiPKHPBU997iDPr4knb3ELMICcBhiqW+kibnqr12AbEg6An0OX3+A2tCvGk2MuOZ3zq0L2X1SVb1Bo8yCaetpD8+hPmTI/QQIDAQAB` | — |
+  | MX (SPF) | `send` | `feedback-smtp.us-east-1.amazonses.com` | 10 |
+  | TXT (SPF) | `send` | `v=spf1 include:amazonses.com ~all` | — |
+
+  DMARC is **not** required by Resend for sending (optional, can add later). After adding the records, click "Verify" in the Resend dashboard, then re-run the real send test to confirm delivery + headers. **From address (confirmed, env-driven — NOT `support@`):** `notifications@prayerwallapp.com` (prod `EMAIL_FROM_ADDRESS`) / `no-reply@prayerwallapp.com` (staging). The user-facing `support@prayerwallapp.com` in UI copy is a separate contact address, unrelated to the send-from.
+- **Reply-To wired (BUILD-16) — code-complete, end-to-end verification BLOCKED on the domain gap above.** All 4 transactional send sites (`waitlist`, `prayer-notification`, `escalation`, `digest`) now set `replyTo` = `EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'`, so replies reach a real Santé House inbox without MX/inbox hosting on `prayerwallapp.com`. Cannot confirm the `Reply-To` header on a real delivered email until the domain is verified (every send is 403'd first) — re-run the real send test once DNS is in.
 
 ---
 
@@ -516,4 +525,4 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 ---
 
-*Last updated: BUILD-14 (2026-07-21) — embed reaction frontend wiring shipped + staging-verified. See SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
+*Last updated: DESIGN-07 / Session 26 (2026-07-23) — avatar palette token layer wired (palette + slot tokens in tokens.css + Tailwind, deterministic hash in lib/avatar.ts, Avatar entry added to patterns.md). See SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*

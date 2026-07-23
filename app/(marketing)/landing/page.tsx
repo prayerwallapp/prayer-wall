@@ -37,7 +37,16 @@ const TOKENS = {
   praiseDeep: '#B8791F',
 }
 
-const AVATAR_PALETTE = ['#9FE1CB', '#FAC775', '#2F86EB', '#F2A29B', '#8FB8E0', '#C9A6E8']
+const AVATAR_PALETTE = [
+  'var(--color-avatar-slot-1)',
+  'var(--color-avatar-slot-2)',
+  'var(--color-avatar-slot-3)',
+  'var(--color-avatar-slot-4)',
+  'var(--color-avatar-slot-5)',
+  'var(--color-avatar-slot-6)',
+  'var(--color-avatar-slot-7)',
+  'var(--color-avatar-slot-8)',
+]
 
 // PLACEHOLDER LOGOS — real files, no confirmed partnership yet.
 // Move these paths to next/image <Image> tags when the section is re-enabled.
@@ -475,8 +484,8 @@ export default function WaitlistLandingPage() {
                 <p className="mt-3 text-[13.5px] leading-relaxed" style={{ color: TOKENS.ink }}>&ldquo;{t.quote}&rdquo;</p>
                 <div className="mt-5 flex items-center gap-2.5">
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold text-white"
-                    style={{ background: AVATAR_PALETTE[i % AVATAR_PALETTE.length] }}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold"
+                    style={{ background: AVATAR_PALETTE[i % AVATAR_PALETTE.length], color: TOKENS.ink }}
                   >
                     {t.initials}
                   </span>

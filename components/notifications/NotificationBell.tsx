@@ -82,7 +82,7 @@ function NotifItem({ n }: { n: NotifRow }) {
         style={{ backgroundColor: avatarColor(seed) }}
         aria-hidden="true"
       >
-        <span className="text-[11px] font-semibold text-white leading-none font-body">
+        <span className="text-[11px] font-semibold text-primary leading-none font-body">
           {avatarInitials(name)}
         </span>
       </div>

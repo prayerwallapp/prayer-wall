@@ -626,6 +626,33 @@ const labels = getLabels(church.label_overrides)
 
 ---
 
+### Avatar
+
+**Figma:** `Avatar` component — `Slot=1..8` × `Style=Large|Medium|Small`, 24 variants. Uses a three-layer token structure:
+
+| Layer | CSS variables | Purpose |
+|---|---|---|
+| Primitive | `--color-palette-{tone}` (8 tones) | Raw accent tones; usable anywhere (badges, chips, borders) |
+| Semantic alias | `--color-avatar-slot-{1..8}` | Role layer; aliases a palette tone — component consumes these, not raw tones |
+| Component | reads `--color-avatar-slot-{n}` | Avatar circle background |
+
+**Slot → tone mapping:**
+1 cornflower (#A7C5F9), 2 lime (#D8F9B8), 3 peach (#F3D9C4), 4 lavender (#D9D4F9),
+5 blush (#F9D4E0), 6 seafoam (#C4F3E0), 7 butter (#F9EBB8), 8 periwinkle (#C7C9F5).
+
+**Initials text:** `color/text/primary` (#18181B) — Tailwind class `text-primary`. All 8 backgrounds clear WCAG AA with dark text. Do not use `text-white` on avatar backgrounds.
+
+**Color assignment:** Deterministic hash of `user_id` (fallback: `display_name`) mod 8 → `--color-avatar-slot-{n}`.
+Same person = same slot = same color on every render. See `lib/avatar.ts → avatarColor(seed)`.
+
+**Tailwind aliases:** `bg-avatar-slot-{1..8}` and `bg-palette-{tone}` (all defined in `tailwind.config.ts`).
+
+**Not yet in code (intentional):** The 8 `-light` palette tone variants exist in Figma (`color/palette/{tone}-light`) but are **not** wired into `tokens.css` or Tailwind — reserved for future accent-surface work (chips, banners). Absence is deliberate; do not treat as drift. *(Session 26 / DESIGN-07, 2026-07-23)*
+
+**Target:** `lib/avatar.ts` (color assignment), `components/notifications/NotificationBell.tsx` (only current avatar render site). No extracted Avatar component exists yet.
+
+---
+
 ### SubmissionCard
 
 **Figma:** Wall screen designs (not in library component page — rendered in WallGrid context).

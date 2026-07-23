@@ -1,13 +1,8 @@
-// Deterministic avatar color + initials. Josiah is still tuning the 6 slot
-// colors — update hex values here when finalized, then mirror to tokens.css.
-const AVATAR_COLORS = [
-  '#0F6E56', // 1 — teal-600
-  '#854F0B', // 2 — amber-600
-  '#2563EB', // 3 — blue-600
-  '#DC2626', // 4 — red-600
-  '#5F45BF', // 5 — purple
-  '#64748B', // 6 — gray-400
-]
+// Maps seed (user_id preferred, display_name fallback) to --color-avatar-slot-{1..8}.
+// Same seed always resolves to the same slot — deterministic across renders.
+// Slot→tone: 1 cornflower, 2 lime, 3 peach, 4 lavender, 5 blush, 6 seafoam, 7 butter, 8 periwinkle.
+// Tokens defined in app/tokens.css; Tailwind alias bg-avatar-slot-{1..8}.
+const AVATAR_SLOT_COUNT = 8
 
 function hashString(s: string): number {
   let h = 0
@@ -18,7 +13,8 @@ function hashString(s: string): number {
 }
 
 export function avatarColor(seed: string): string {
-  return AVATAR_COLORS[hashString(seed) % AVATAR_COLORS.length]
+  const slot = (hashString(seed) % AVATAR_SLOT_COUNT) + 1
+  return `var(--color-avatar-slot-${slot})`
 }
 
 export function avatarInitials(name: string): string {

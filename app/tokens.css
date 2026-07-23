@@ -87,6 +87,28 @@
   --color-semantic-praise-bg: var(--amber-100);
   --color-semantic-praise-text: var(--amber-800);
 
+  /* ---- Palette — raw accent tones, usable anywhere (badges, chips, tags, borders) ---- */
+  /* -light variants exist in Figma but are intentionally not wired into code yet — reserved for
+     future accent-surface work. Absence here is deliberate, not drift. (Session 26 / DESIGN-07) */
+  --color-palette-cornflower: #A7C5F9;
+  --color-palette-lime: #D8F9B8;
+  --color-palette-peach: #F3D9C4;
+  --color-palette-lavender: #D9D4F9;
+  --color-palette-blush: #F9D4E0;
+  --color-palette-seafoam: #C4F3E0;
+  --color-palette-butter: #F9EBB8;
+  --color-palette-periwinkle: #C7C9F5;
+
+  /* ---- Avatar role — semantic aliases into palette. Avatar component consumes slot-*, not raw tones. ---- */
+  --color-avatar-slot-1: var(--color-palette-cornflower);
+  --color-avatar-slot-2: var(--color-palette-lime);
+  --color-avatar-slot-3: var(--color-palette-peach);
+  --color-avatar-slot-4: var(--color-palette-lavender);
+  --color-avatar-slot-5: var(--color-palette-blush);
+  --color-avatar-slot-6: var(--color-palette-seafoam);
+  --color-avatar-slot-7: var(--color-palette-butter);
+  --color-avatar-slot-8: var(--color-palette-periwinkle);
+
   /* ---- Typography ---- */
   --font-display-size: 1.75rem;   /* 28px */
   --font-display-line: 2.125rem;  /* 34px */

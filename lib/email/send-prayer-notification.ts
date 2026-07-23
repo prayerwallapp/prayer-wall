@@ -7,6 +7,8 @@ import type { NotificationRow, UserRow } from '@/lib/supabase/types'
 
 // Always read from env — never hardcode a domain or resend.dev sandbox address.
 const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? 'Prayer Wall <noreply@prayerwallapp.com>'
+// Replies go to a real inbox (Santé House) — prayerwallapp.com has no inbox hosting.
+const REPLY_TO_ADDRESS = process.env.EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'
 
 export async function sendPrayerNotificationEmail(
   owner: Pick<UserRow, 'email' | 'display_name'>,
@@ -36,6 +38,7 @@ export async function sendPrayerNotificationEmail(
 
   await resend.emails.send({
     from: FROM_ADDRESS,
+    replyTo: REPLY_TO_ADDRESS,
     to: owner.email,
     subject,
     react: createElement(PrayerNotificationEmail, {

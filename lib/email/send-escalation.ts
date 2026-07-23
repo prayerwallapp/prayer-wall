@@ -9,6 +9,8 @@ import type { SubmissionType } from '@/lib/supabase/types'
 // Always read from env — never hardcode a domain or resend.dev sandbox address.
 // In production this resolves to a verified prayerwallapp.com sender.
 const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? 'Prayer Wall Alerts <noreply@prayerwallapp.com>'
+// Replies go to a real inbox (Santé House) — prayerwallapp.com has no inbox hosting.
+const REPLY_TO_ADDRESS = process.env.EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'
 
 export interface SendEscalationParams {
   churchId: string
@@ -65,6 +67,7 @@ export async function sendEscalationEmail(
 
   const { error: sendError } = await resend.emails.send({
     from: FROM_ADDRESS,
+    replyTo: REPLY_TO_ADDRESS,
     to: contacts.map((c) => c.email),
     subject: `Urgent: a submission at ${church.name} needs immediate review`,
     react: createElement(EscalationEmail, {

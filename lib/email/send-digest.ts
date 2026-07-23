@@ -7,6 +7,8 @@ import DigestEmail from '@/emails/digest-email'
 
 // Always read from env — never hardcode a domain or resend.dev sandbox address.
 const FROM_ADDRESS = process.env.EMAIL_FROM_ADDRESS ?? 'Prayer Wall <noreply@prayerwallapp.com>'
+// Replies go to a real inbox (Santé House) — prayerwallapp.com has no inbox hosting.
+const REPLY_TO_ADDRESS = process.env.EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'
 const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000
 
 export interface SendDigestResult {
@@ -107,6 +109,7 @@ export async function sendWeeklyDigest(churchId: string): Promise<SendDigestResu
 
   const { error: sendError } = await resend.emails.send({
     from: FROM_ADDRESS,
+    replyTo: REPLY_TO_ADDRESS,
     to: church.summary_emails,
     subject: `Weekly digest: ${pendingCount} item${pendingCount === 1 ? '' : 's'} waiting at ${church.name}`,
     react: createElement(DigestEmail, {
