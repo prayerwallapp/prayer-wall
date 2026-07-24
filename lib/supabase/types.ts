@@ -151,9 +151,9 @@ export type NotificationRow = {
   updated_at: string
 }
 
-// Shape of `submissions.select('*, users!submissions_user_id_fkey(display_name)')`.
+// Shape of `submissions.select('*, users!submissions_user_id_fkey(display_name,profile_image_url)')`.
 export type SubmissionWithAuthor = SubmissionRow & {
-  users?: { display_name: string | null } | null
+  users?: { display_name: string | null; profile_image_url: string | null } | null
 }
 
 export type ReactionCounts = { prayer: number; praise: number; heart: number }

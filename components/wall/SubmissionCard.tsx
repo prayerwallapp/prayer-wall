@@ -9,6 +9,7 @@ import type {
   SubmissionUpdateRow,
   SubmissionWithAuthor,
 } from '@/lib/supabase/types'
+import { avatarColor } from '@/lib/avatar'
 
 export type CardSize = 'default' | 'compact' | 'display'
 
@@ -84,14 +85,41 @@ type Burst = {
   ty: number
 }
 
-function getAuthorName(
+type AuthorDisplay = {
+  name: string
+  avatarBg: string
+  photoUrl: string | null
+}
+
+// anonSlot: a per-card-mount random 1–8 value (from useState initializer).
+// Anonymous and hide_member_names cases use it so color can't be correlated
+// across posts by the same hidden author. Identified case uses a deterministic
+// hash of user_id mod 8 so the same person always gets the same slot.
+function getAuthorDisplay(
   submission: SubmissionWithAuthor,
   church: ChurchPublic,
-  labels: Labels
-): string {
-  if (submission.is_anonymous) return labels.anonymous_label
-  if (church.hide_member_names) return labels.member_label
-  return submission.users?.display_name ?? labels.member_label
+  labels: Labels,
+  anonSlot: number
+): AuthorDisplay {
+  if (submission.is_anonymous) {
+    return {
+      name: labels.anonymous_label,
+      avatarBg: `var(--color-avatar-slot-${anonSlot})`,
+      photoUrl: null,
+    }
+  }
+  if (church.hide_member_names) {
+    return {
+      name: labels.member_label,
+      avatarBg: `var(--color-avatar-slot-${anonSlot})`,
+      photoUrl: null,
+    }
+  }
+  return {
+    name: submission.users?.display_name ?? labels.member_label,
+    avatarBg: avatarColor(submission.user_id),
+    photoUrl: submission.users?.profile_image_url ?? null,
+  }
 }
 
 function getInitials(name: string): string {
@@ -242,6 +270,9 @@ export default function SubmissionCard({
   // Timestamp renders only after mount — Date.now() on the server would
   // cause a hydration mismatch (same pattern as Clock in DisplayClient).
   const [now, setNow] = useState<number | null>(null)
+  // Random slot for anonymous/hidden avatars — initialized once per card mount
+  // so color is stable within a session but un-correlated across page loads.
+  const [anonSlot] = useState(() => Math.floor(Math.random() * 8) + 1)
   const buttonRefs = useRef<Partial<Record<ReactionEmoji, HTMLButtonElement | null>>>({})
   const burstId = useRef(0)
   const activeBurstCount = useRef(0)
@@ -251,7 +282,7 @@ export default function SubmissionCard({
   const isOwner = !!currentUserId && currentUserId === submission.user_id
   const isDisplay = size === 'display'
   const styles = SIZE_STYLES[size]
-  const authorName = getAuthorName(submission, church, labels)
+  const { name: authorName, avatarBg, photoUrl } = getAuthorDisplay(submission, church, labels, anonSlot)
   const isAnswered =
     submission.type === 'praise' && !!submission.related_submission_id
 
@@ -334,14 +365,22 @@ export default function SubmissionCard({
 
       <div className={`flex min-w-0 flex-1 flex-col ${styles.body}`}>
         <div className={`flex items-center ${styles.header}`}>
-          <span
-            className={`flex shrink-0 items-center justify-center rounded-full text-secondary ${
-              submission.type === 'prayer' ? 'bg-prayer-bg' : 'bg-praise-bg'
-            } ${styles.avatar}`}
-            aria-hidden="true"
-          >
-            {getInitials(authorName)}
-          </span>
+          {photoUrl ? (
+            <img
+              src={photoUrl}
+              alt=""
+              className={`shrink-0 rounded-full object-cover ${styles.avatar}`}
+              aria-hidden="true"
+            />
+          ) : (
+            <span
+              className={`flex shrink-0 items-center justify-center rounded-full text-primary ${styles.avatar}`}
+              style={{ backgroundColor: avatarBg }}
+              aria-hidden="true"
+            >
+              {getInitials(authorName)}
+            </span>
+          )}
 
           {size === 'default' && (
             <div className="flex min-w-0 flex-col gap-[2px]">

@@ -17,7 +17,7 @@ async function getPublicSubmissions(churchId: string): Promise<SubmissionWithAut
   const supabase = createAdminClient()
   const { data } = await supabase
     .from('submissions')
-    .select('*, users!submissions_user_id_fkey(display_name)')
+    .select('*, users!submissions_user_id_fkey(display_name,profile_image_url)')
     .eq('church_id', churchId)
     .eq('status', 'approved')
     .eq('visibility', 'public')
@@ -34,7 +34,7 @@ async function getPersonalizedSubmissions(churchId: string, userId: string): Pro
   const supabase = createClient()
   const { data } = await supabase
     .from('submissions')
-    .select('*, users!submissions_user_id_fkey(display_name)')
+    .select('*, users!submissions_user_id_fkey(display_name,profile_image_url)')
     .eq('church_id', churchId)
     .or(`user_id.eq.${userId},and(status.eq.approved,visibility.eq.public)`)
     .order('created_at', { ascending: false })

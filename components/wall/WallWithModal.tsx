@@ -137,10 +137,23 @@ export default function WallWithModal({
             (row.visibility === undefined || row.visibility === 'public')
 
           if (isPublicApproved) {
-            setSubmissions((prev) => {
-              if (prev.find((s) => s.id === row.id)) return prev
-              return [row as SubmissionWithAuthor, ...prev]
-            })
+            // Re-fetch with the users join so display_name + profile_image_url are present.
+            // Realtime postgres_changes payloads carry only raw table columns — no join data.
+            // The dedup guard in the .then() handles the race case where the row arrived
+            // through another path (e.g. initial SSR or a concurrent realtime event).
+            supabase
+              .from('submissions')
+              .select('*, users!submissions_user_id_fkey(display_name,profile_image_url)')
+              .eq('id', row.id)
+              .single()
+              .then(({ data }) => {
+                if (data) {
+                  setSubmissions((latest) => {
+                    if (latest.find((s) => s.id === data.id)) return latest
+                    return [data as unknown as SubmissionWithAuthor, ...latest]
+                  })
+                }
+              })
           } else {
             setSubmissions((prev) => prev.filter((s) => s.id !== row.id))
           }
