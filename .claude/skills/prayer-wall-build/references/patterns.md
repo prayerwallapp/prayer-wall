@@ -353,6 +353,8 @@ function reactionText(n: NotificationRow): string {
 
 ## Real-time Subscription (Client Component)
 
+> **CRITICAL — do not insert raw `postgres_changes` payloads into state.** Raw Realtime `UPDATE` payloads carry only base table columns, no PostgREST join data. Inserting `payload.new` directly (as an earlier version of this example did) silently drops any joined author/user data, which was the exact root cause of the BUILD-18/19 identity display bug ("A member of our church" showed on the author's own posts because `users` was `undefined` on the raw payload, not because of any privacy setting). If a new realtime feature needs joined data, re-fetch the row with the join before adding it to state, as shown below.
+
 ```tsx
 // components/wall/SubmissionsGrid.tsx
 'use client'
@@ -364,7 +366,7 @@ export function SubmissionsGrid({
   initialSubmissions,
   churchId
 }: {
-  initialSubmissions: Submission[]
+  initialSubmissions: SubmissionWithAuthor[]
   churchId: string
 }) {
   const [submissions, setSubmissions] = useState(initialSubmissions)
@@ -383,9 +385,21 @@ export function SubmissionsGrid({
         table: 'submissions',
         filter: `church_id=eq.${churchId}`,
       }, (payload) => {
-        if (payload.new.status === 'approved') {
-          setSubmissions(prev => [payload.new as Submission, ...prev])
-        }
+        if (payload.new.status !== 'approved') return
+
+        // Re-fetch WITH the join -- payload.new never has it. See BUILD-19.
+        supabase
+          .from('submissions')
+          .select('*, users!submissions_user_id_fkey(display_name,profile_image_url)')
+          .eq('id', payload.new.id)
+          .single()
+          .then(({ data }) => {
+            if (!data) return
+            setSubmissions(latest => {
+              if (latest.find(s => s.id === data.id)) return latest // dedup guard
+              return [data as SubmissionWithAuthor, ...latest]
+            })
+          })
       })
       .subscribe()
 
@@ -400,7 +414,9 @@ export function SubmissionsGrid({
 }
 ```
 
-> **Known drift (not yet patched):** this example's component signature (`initialSubmissions`, `churchId`) is simplified/illustrative. The real `WallGrid.tsx` takes `church`, `labels`, `reactionCounts`, `onReact`, and `currentUserId` props. The grid className above is accurate and current; the props list is not. Flagged for a future patch, not urgent.
+> **Known drift (not yet patched):** this example's component signature (`initialSubmissions`, `churchId`) is simplified/illustrative. The real `WallGrid.tsx` takes `church`, `labels`, `reactionCounts`, `onReact`, and `currentUserId` props. The grid className above is accurate and current; the props list is not. Flagged for a future patch, not urgent. The realtime handler pattern above, however, is the corrected real pattern (`WallWithModal.tsx`, BUILD-19) and should be followed as-is for any new realtime feature.
+
+> **Known gap (BUILD-19, not this pattern's job to fix):** the re-fetch above uses the browser client (anon key for logged-out visitors). For a logged-out visitor, the `church_isolation` RLS policy on `users` blocks the join, so `users` resolves to `null` and the fallback label shows -- same behavior as pre-BUILD-19, just narrower now (authenticated members resolve correctly; anon visitors still see the fallback on live-arriving posts). See `PRAYER_WALL_PROJECT.md` Known Open Issues.
 
 ---
 
@@ -642,14 +658,20 @@ const labels = getLabels(church.label_overrides)
 
 **Initials text:** `color/text/primary` (#18181B) — Tailwind class `text-primary`. All 8 backgrounds clear WCAG AA with dark text. Do not use `text-white` on avatar backgrounds.
 
-**Color assignment:** Deterministic hash of `user_id` (fallback: `display_name`) mod 8 → `--color-avatar-slot-{n}`.
-Same person = same slot = same color on every render. See `lib/avatar.ts → avatarColor(seed)`.
+**Identity display rules (BUILD-19 / 2026-07-24, `components/wall/SubmissionCard.tsx → getAuthorDisplay`):**
+1. `is_anonymous = true` → name = `labels.anonymous_label` ("Anonymous"), color = random slot per card mount, photo = none. Single initial "A".
+2. `hide_member_names = true`, non-anonymous → name = `labels.member_label` ("A member of our church"), color = random slot per card mount, photo = none. Initials from label string ("AM").
+3. Normal (identified) → name = `users.display_name` (fallback `labels.member_label`), color = deterministic hash of `user_id`, photo = `users.profile_image_url` if set (renders `<img>` instead of initials span).
+
+**Color assignment:**
+- Anonymous / hidden: `anonSlot = useState(() => Math.floor(Math.random() * 8) + 1)` — random per card mount, stable within session, un-correlated across page reloads. Prevents color-based correlation of hidden posts by the same author.
+- Identified: `avatarColor(user_id)` in `lib/avatar.ts` — deterministic `Math.imul` 31-hash of `user_id` mod 8 → `var(--color-avatar-slot-{n})`. Same person = same slot = same color across all their posts and page reloads.
 
 **Tailwind aliases:** `bg-avatar-slot-{1..8}` and `bg-palette-{tone}` (all defined in `tailwind.config.ts`).
 
-**Not yet in code (intentional):** The 8 `-light` palette tone variants exist in Figma (`color/palette/{tone}-light`) but are **not** wired into `tokens.css` or Tailwind — reserved for future accent-surface work (chips, banners). Absence is deliberate; do not treat as drift. *(Session 26 / DESIGN-07, 2026-07-23)*
+**Not yet in code (intentional):** The 8 `-light` palette tone variants exist in Figma (`color/palette/{tone}-light`) but are **not** wired into `tokens.css` or Tailwind — reserved for future accent-surface work (chips, banners). Absence is deliberate; do not treat as drift. *(DESIGN-07 / Session 26, 2026-07-23)*
 
-**Target:** `lib/avatar.ts` (color assignment), `components/notifications/NotificationBell.tsx` (only current avatar render site). No extracted Avatar component exists yet.
+**Target:** `lib/avatar.ts` (color assignment function), `components/notifications/NotificationBell.tsx` and `components/wall/SubmissionCard.tsx` (avatar render sites). No extracted Avatar component exists yet.
 
 ---
 

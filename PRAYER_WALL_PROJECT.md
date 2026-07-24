@@ -160,6 +160,8 @@ status                text        -- 'pending' | 'approved' | 'held' | 'rejected
 flagged_reason        text        -- populated if held/flagged
 moderated_by          uuid FK → users (nullable)
 moderated_at          timestamptz (nullable)
+visibility            text        -- 'public' | 'private'; set by moderator on approve, null until then. session6.sql
+contact_requested     boolean     DEFAULT false      -- member opted in to pastoral follow-up at submit time. session6.sql
 priority              text        DEFAULT 'normal'  -- internal-only, reserved for future AI-analysis input, no member-facing UI
 update_used           boolean     DEFAULT false      -- one-edit-per-post limit
 related_submission_id uuid FK → submissions (nullable) -- praise report linked to a prior prayer request, same church only, DB trigger-enforced
@@ -191,6 +193,8 @@ submission_id     uuid FK → submissions
 church_id         uuid FK → churches
 user_id           uuid FK → users (nullable, ON DELETE SET NULL) -- reactor identity, used for notification naming
 emoji             text        -- must be an enabled key in church.reaction_settings
+source            text        DEFAULT 'app'  -- 'app' | 'embed'. session19.sql
+embed_visitor_id  uuid        -- client-generated UUID for anon embed dedup; null for source='app'. session19.sql
 created_at        timestamptz
 ```
 
@@ -211,10 +215,12 @@ id                uuid PK
 church_id         uuid FK → churches
 user_id           uuid FK → users
 submission_id     uuid FK → submissions (nullable, CASCADE)
-type              text NOT NULL DEFAULT 'prayer'  -- 'prayer' | 'update'
+type              text NOT NULL DEFAULT 'prayer'  -- 'prayer' | 'praise' | 'update'. session14.sql extended to include 'praise'
 prayer_count      integer NOT NULL DEFAULT 1
 read              boolean NOT NULL DEFAULT false
 email_sent        boolean NOT NULL DEFAULT false
+reactor_id            uuid FK → users (nullable, ON DELETE SET NULL) -- most recent reactor. session14.sql
+reactor_display_name  text        -- snapshot at reaction time, respects hide_member_names ('Someone' if hidden). session14.sql
 created_at        timestamptz
 updated_at        timestamptz
 ```
@@ -365,7 +371,7 @@ All frontend strings must be defined in a constants/config file from day one —
 
 ---
 
-## Design System (Sessions 9–17, 26 / DESIGN-01..07, BUILD-09..10, MKT-01)
+## Design System (Sessions 9–17, 26 / DESIGN-01..07, BUILD-09..10, BUILD-19, MKT-01)
 
 **Status: complete.** All designed surfaces migrated, all NO_DESIGN blockers resolved.
 
@@ -386,6 +392,8 @@ All frontend strings must be defined in a constants/config file from day one —
 **MKT-01 / Session 16:** Waitlist landing page (`app/(marketing)/landing/page.tsx` routed from root via middleware, `/old` route preserves prior wall entry), `waitlist_signups` table with RLS, `WaitlistForm` client component. Figma component audit completed. Note: BUILD-11 brought live page to 7 of 8 feature cards per `docs/landing-page-copy-locked.md` — "Follow-up tools for pastoral teams" intentionally withheld (product decision pending, no schema exists). See SESSION_LOG.md MKT-01 row.
 
 **DESIGN-06 / Session 17:** `Button/Account` Style=Action + Style=Danger implemented inline in `ProfileModal.tsx` `PrivacySection` using semantic token classes. Full Figma → Code Component Map added to `patterns.md`. Email font stack fixed (`Inter, ` prepended to all 3 transactional email templates). `NotificationBell` unread-dot suppression (`unreadCount === 0`) verified in Chromium via Puppeteer.
+
+**BUILD-19 / 2026-07-24:** Avatar identity display fixed — three-case render logic in `SubmissionCard.tsx → getAuthorDisplay()`: (a) anonymous → `labels.anonymous_label`, random-per-mount slot color; (b) `hide_member_names=true` → `labels.member_label`, random-per-mount slot color; (c) identified → real `users.display_name`, deterministic `avatarColor(user_id)` slot, `profile_image_url` photo shown if set. Realtime handler in `WallWithModal.tsx` rewritten from raw-payload prepend to async re-fetch with `users!submissions_user_id_fkey(display_name,profile_image_url)` join (raw Realtime `postgres_changes` payloads carry no PostgREST join data — root cause of the identity display bug). `SubmissionWithAuthor` type extended with `profile_image_url`. Full three-case rules documented in `patterns.md` Avatar section.
 
 ---
 
@@ -467,15 +475,10 @@ Reason is visible to moderator in the inbox to explain the flag.
 - **ToS / Privacy Policy attorney review** — AI-drafted, live, unreviewed by a lawyer. Data Processing Addendum identified as a gap. Must resolve before onboarding real churches beyond a trusted beta — prayer request data is sensitive PII.
 - ~~**Preview deploys broken**~~ — resolved BUILD-13 (2026-07-21). Staging Supabase project (klrxuehjjckbllszedkl) established; all six Preview environment variables wired via Vercel CLI. Preview deploys now route to staging. See `docs/staging-workflow.md`.
 - ~~4 NO_DESIGN UI surfaces~~ — resolved in Sessions 14–17. See Design System section.
-- **🔴 Resend `prayerwallapp.com` domain NOT verified — ALL transactional email is failing (root cause of the Session 16 breakage; BLOCKED on DNS, needs Josiah at the registrar).** Confirmed BUILD-16 (2026-07-21) with a real Resend API send from the staging flow: Resend returns **`403 — "The prayerwallapp.com domain is not verified."`** No email (waitlist confirmation, prayer/praise notification, escalation, digest) has been delivering. The app never surfaced this because the Resend SDK returns `{error}` rather than throwing, and the call sites discard it (waitlist route's `.catch` only catches thrown/network errors, not the `{error}` field) — **secondary finding: transactional sends silently swallow Resend errors; worth adding error logging in a follow-up (not fixed this session, out of scope).** Resend domain `id 327d4a1e-c8dd-410a-afe6-4e220232f362`, all 3 required DNS records show `status: failed`. **Exact records to add at the registrar for `prayerwallapp.com` (host shown relative; append `.prayerwallapp.com` if the registrar wants the full name):**
-  | Type | Host/Name | Value | Priority |
-  |---|---|---|---|
-  | TXT (DKIM) | `resend._domainkey` | `p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCvSMb8jbwUeTh5tZFue/fGgQAM3+JyNlXh8+nAab4NlX604rMQ5puchLAoqDBxIaCIJL81F27rNOpiPKHPBU997iDPr4knb3ELMICcBhiqW+kibnqr12AbEg6An0OX3+A2tCvGk2MuOZ3zq0L2X1SVb1Bo8yCaetpD8+hPmTI/QQIDAQAB` | — |
-  | MX (SPF) | `send` | `feedback-smtp.us-east-1.amazonses.com` | 10 |
-  | TXT (SPF) | `send` | `v=spf1 include:amazonses.com ~all` | — |
-
-  DMARC is **not** required by Resend for sending (optional, can add later). After adding the records, click "Verify" in the Resend dashboard, then re-run the real send test to confirm delivery + headers. **From address (confirmed, env-driven — NOT `support@`):** `notifications@prayerwallapp.com` (prod `EMAIL_FROM_ADDRESS`) / `no-reply@prayerwallapp.com` (staging). The user-facing `support@prayerwallapp.com` in UI copy is a separate contact address, unrelated to the send-from.
-- **Reply-To wired (BUILD-16) — code-complete, end-to-end verification BLOCKED on the domain gap above.** All 4 transactional send sites (`waitlist`, `prayer-notification`, `escalation`, `digest`) now set `replyTo` = `EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'`, so replies reach a real Santé House inbox without MX/inbox hosting on `prayerwallapp.com`. Cannot confirm the `Reply-To` header on a real delivered email until the domain is verified (every send is 403'd first) — re-run the real send test once DNS is in.
+- ~~**Resend `prayerwallapp.com` domain NOT verified**~~ — **Resolved BUILD-17 (2026-07-24).** All 3 DNS records (`resend._domainkey` DKIM TXT, `send` SPF MX, `send` SPF TXT) verified in Resend dashboard (`status: verified`, `sending: enabled`). Real test send confirmed `last_event: delivered` to `josiah@santehouse.co`. SPF/DKIM merge concern raised in BUILD-16 does not apply — `prayerwallapp.com` root has no MX and no TXT records; Resend's records live entirely on `send.prayerwallapp.com` and `resend._domainkey.prayerwallapp.com`. Root cause was entirely the unverified DNS; no code changes were needed.
+- ~~**Reply-To wired (BUILD-16) — end-to-end verification BLOCKED on DNS**~~ — **Resolved BUILD-17.** `reply_to: ["prayerwall@santehouse.co"]` confirmed in Resend delivery record for the test send. `EMAIL_REPLY_TO_ADDRESS` env var is not set in `.env.local`; code fallback to hardcoded `prayerwall@santehouse.co` is the correct value.
+- **Anon/unauthenticated visitor realtime identity gap — low priority, not a regression (BUILD-19 / 2026-07-24).** Logged-out visitors may see `labels.member_label` ("A member of our church") instead of the real display name/photo when a new submission appears via Realtime mid-session. Root: the realtime re-fetch in `WallWithModal.tsx` uses `createClient()` (browser, no auth session → anon key); the `church_isolation` RLS policy correctly blocks the `users` join for the anon role, returning `users: null`. SSR page load is unaffected (server-side admin client bypasses RLS, returns correct data). This is the same behavior as before the BUILD-19 fix. Three options: (a) proxy the re-fetch through a `/api/submissions/[id]` server route using the admin client; (b) a narrowly-scoped RLS policy allowing anon to read `display_name`/`profile_image_url` where the submission is approved+public; (c) accept the degradation. Decide before any realtime-polish sprint.
+- **Email send error-swallow — code quality backlog, low priority (BUILD-16 finding).** All 4 transactional send sites (`send-prayer-notification.ts`, `send-escalation.ts`, `send-digest.ts`, `app/api/waitlist/route.ts`) discard the Resend SDK's `{ data, error }` return. Failures (rate limit, bounce, future domain issue) are silent and unlogged. The waitlist route's `.catch()` covers thrown/network errors only, not the `error` field. Low urgency while on the free tier; address before onboarding paying churches.
 
 ---
 
@@ -522,7 +525,9 @@ Reason is visible to moderator in the inbox to explain the flag.
 - ~~Toast system architecture~~ — resolved BUILD-10 / Session 15: global Toast via `lib/toast` hook + `ToastViewport` in wall root
 - ~~NotificationBell trigger scope~~ — resolved BUILD-09 / Session 14: prayer/praise reactions trigger notification (email + in-app); heart is in-app only
 - **Follow-up tools for pastoral teams** — lightweight care-tracking (who needs a call or visit) attached to a submission, surfaced from the moderation inbox. No schema exists yet. Referenced publicly as "Coming soon" in marketing copy (`docs/landing-page-copy-locked.md`), but NOT yet implemented in code — verified 2026-07-20 that this feature card is absent from the live `FEATURES` array in `app/(marketing)/landing/page.tsx`. The locked copy doc contained a false claim that this was "now live as a 'Coming soon' feature card." Decision needed: build the feature card first (quick), or ship the full care-tracking schema first?
+- **`hide_member_names` product question: is the lever too broad?** Currently a binary church-wide toggle — either all non-anonymous display names are hidden to all viewers, or none are. Flagged during BUILD-18 (identity display audit) as a potential UX gap: a moderator might reasonably want to see real names in the admin inbox even while the public wall hides them. No decision or schema change needed now. Revisit during a dedicated admin-dashboard UX sprint.
+- **Email templates Figma design pass — future, unscheduled sprint.** All four email types (waitlist confirmation, weekly digest, prayer/praise reaction notification, escalation) are functional and church-branded (logo + `brand_color` header), but were built straight-to-code without a Figma design session. Flag for a dedicated sprint to produce proper Figma templates for all four types before the platform is shown to paying churches.
 
 ---
 
-*Last updated: DESIGN-07 / Session 26 (2026-07-23) — avatar palette token layer wired (palette + slot tokens in tokens.css + Tailwind, deterministic hash in lib/avatar.ts, Avatar entry added to patterns.md). See SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
+*Last updated: DOC-03 follow-up (2026-07-24, Claude Project review pass) — corrected two sync gaps DOC-03 missed: this document's readable `submissions`/`reactions`/`notifications` schema summaries were out of sync with the canonical `schema.md` (added `visibility`, `contact_requested`, `source`, `embed_visitor_id`, `reactor_id`, `reactor_display_name`, and the `'praise'` notification type -- this doc's own stated rule is that schema.md wins on any disagreement); and `patterns.md`'s Real-time Subscription example still showed the raw-payload-insert pattern that caused the BUILD-18/19 bug, now rewritten to the corrected join-safe re-fetch pattern. See SESSION_LOG.md for full session history. Update this document as decisions are made -- this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` -- keep both in sync.*

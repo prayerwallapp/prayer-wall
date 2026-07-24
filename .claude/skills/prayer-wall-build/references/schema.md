@@ -57,6 +57,9 @@ CREATE TABLE submissions (
   flagged_reason         text,
   moderated_by           uuid REFERENCES users(id),
   moderated_at           timestamptz,
+  -- session6.sql
+  visibility             text CHECK (visibility IN ('public', 'private')),    -- set by moderator on approve; null until moderation action
+  contact_requested      boolean DEFAULT false,                                -- member opted in to pastoral follow-up at submit time
   priority               text DEFAULT 'normal' CHECK (priority IN ('normal', 'urgent')), -- internal only, no member-facing UI
   update_used              boolean DEFAULT false, -- one-edit-per-post limit
   related_submission_id    uuid REFERENCES submissions(id) ON DELETE SET NULL, -- praise report linking to a prior prayer request
