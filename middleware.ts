@@ -3,18 +3,15 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const ROOT_DOMAIN = process.env.NEXT_PUBLIC_ROOT_DOMAIN || 'localhost:3000'
 
-// Production hostname without port — used to gate the preview fallback so it
-// never fires on the real production domain.
-const PROD_HOSTNAME = 'prayerwallapp.com'
-
 /**
  * Returns the tenant subdomain for a request host, or null for the root
  * domain / www / bare apex (marketing site, no church context).
  *
- * Examples (ROOT_DOMAIN = "prayerwallapp.com"):
- *   hillsong.prayerwallapp.com -> "hillsong"
- *   prayerwallapp.com          -> null
- *   www.prayerwallapp.com      -> null
+ * Examples (ROOT_DOMAIN = "prayerwallapp.com" or "stage.prayerwallapp.com"):
+ *   hillsong.prayerwallapp.com      -> "hillsong"
+ *   test.stage.prayerwallapp.com    -> "test"   (ROOT_DOMAIN = stage.prayerwallapp.com)
+ *   prayerwallapp.com               -> null
+ *   www.prayerwallapp.com           -> null
  */
 function extractSubdomain(host: string): string | null {
   const hostname = host.split(':')[0]
@@ -33,18 +30,20 @@ function extractSubdomain(host: string): string | null {
 }
 
 /**
- * On non-production hosts (*.vercel.app preview URLs, localhost), allow a
+ * On non-ROOT_DOMAIN hosts (*.vercel.app preview URLs, localhost), allow a
  * ?church=<subdomain> query param to stand in for subdomain-based routing.
- * This is strictly scoped: it never activates on prayerwallapp.com, so it
- * can't be used to spoof tenants in production.
+ * This is strictly scoped: it never activates on ROOT_DOMAIN itself (or any
+ * subdomain of it), so it can't be used to spoof tenants in production or
+ * staging. The guard is driven entirely by ROOT_DOMAIN — no hardcoded domain.
  */
 function resolveSubdomain(host: string, url: URL): string | null {
   const subdomain = extractSubdomain(host)
   if (subdomain) return subdomain
 
   const hostname = host.split(':')[0]
-  const isProduction = hostname === PROD_HOSTNAME || hostname.endsWith(`.${PROD_HOSTNAME}`)
-  if (isProduction) return null
+  const rootHostname = ROOT_DOMAIN.split(':')[0]
+  const isOnRootDomain = hostname === rootHostname || hostname.endsWith(`.${rootHostname}`)
+  if (isOnRootDomain) return null
 
   // Non-production: honour ?church= param as a subdomain override
   const churchParam = url.searchParams.get('church')

@@ -85,9 +85,11 @@ Single codebase, single database, single deployment. Every table includes a `chu
 **Embed reaction frontend — SHIPPED (BUILD-14 / 2026-07-21, staging-verified).** The `insert_embed_reaction` RPC's frontend wiring (previously the "fast-follow" deferred by the Session 19b migration) is now built. The embed route's grid (`components/wall/SubmissionsGrid.tsx`) renders anonymous reaction buttons for the church's enabled emojis and calls the RPC via the anon browser client (`lib/embed/react.ts`); visitor identity is a `localStorage` UUID (`lib/embed/visitor-id.ts`) with soft per-visitor dedup. Built into `SubmissionsGrid`, **not** `SubmissionCard` — the brief assumed the embed used `SubmissionCard`'s `'display'` variant, but it never has (see patterns.md). **Verified against staging (not prod), 5 checks:** real browser click (system Chrome via puppeteer-core) → `reactions` row landed with `source='embed'`, `user_id=NULL`, `embed_visitor_id` matching localStorage ✅; reload → button stays disabled from persisted localStorage, no duplicate row ✅; embed-disabled church (Grace) → route 404s, zero reaction UI ✅; `SubmissionCard`/`WallGrid`/`WallWithModal` byte-unchanged, main wall renders normally ✅; realtime — embed has no subscription (never did) and the void RPC returns no row id to dedup a live echo, so counts update optimistically for the reactor only ✅ (deliberate non-goal, not a regression). Rate limiting on the RPC (Vercel Edge Middleware) and the Web Component rebuild remain out of scope.
 
 ### Routing
-Churches are identified by subdomain: `{church}.prayerwallapp.com`. Subdomain is resolved at the Next.js middleware level to look up the `church_id` and inject church context into every request. Custom domain mapping (church brings their own domain) is a future Pro feature.
+Churches are identified by subdomain: `{church}.prayerwallapp.com` (production) or `{church}.stage.prayerwallapp.com` (staging). Subdomain is resolved at the Next.js middleware level to look up the `church_id` and inject church context into every request. Custom domain mapping (church brings their own domain) is a future Pro feature.
 
-**Preview deploy caveat:** Vercel branch preview URLs break subdomain-based church resolution (no real subdomain to parse). A `?church=` query param override was added to middleware, active only on non-production hosts, as a workaround for branch preview testing. Preview deploys are also currently broken for an unrelated reason — see Known Open Issues below.
+`middleware.ts` derives the root hostname entirely from `NEXT_PUBLIC_ROOT_DOMAIN` at runtime — no hardcoded domain strings. **BUILD-21 fix (2026-07-26):** a `PROD_HOSTNAME = 'prayerwallapp.com'` constant was removed; the guard that blocks the `?church=` preview fallback on production now uses `rootHostname` derived from the env var, so staging subdomains resolve correctly when `NEXT_PUBLIC_ROOT_DOMAIN = stage.prayerwallapp.com`.
+
+**Preview deploy caveat:** Vercel branch preview URLs (e.g. `prayer-wall-git-branch-xxx.vercel.app`) have no real subdomain to parse. The `?church=<subdomain>` query param override in middleware acts as a workaround — active only on non-ROOT_DOMAIN hosts, so it cannot be used to spoof tenants on production or staging.
 
 ### App Structure (Monorepo-ready)
 ```
@@ -107,6 +109,35 @@ Built as a single Next.js app now. Route groups are cleanly separated so if disp
 
 ### Real-time
 Supabase real-time subscriptions power both the wall grid and the display app. No polling. No manual refresh.
+
+---
+
+## Environments & Git Workflow
+
+### Two-environment setup (as of BUILD-21 / 2026-07-26)
+
+| | Production | Staging |
+|---|---|---|
+| Vercel project | `prayer-wall` | `prayer-wall-staging` |
+| Domain | `prayerwallapp.com` / `*.prayerwallapp.com` | `stage.prayerwallapp.com` / `*.stage.prayerwallapp.com` |
+| Git branch | `main` | `staging` |
+| Supabase project ref | `vugttmpvqvqvkktlebmf` | `klrxuehjjckbllszedkl` |
+| `NEXT_PUBLIC_ROOT_DOMAIN` | `prayerwallapp.com` | `stage.prayerwallapp.com` |
+
+Both Vercel projects live under the `prayerwall@santehouse.co` team (billing isolated from Studio Casita).
+
+### Staging data policy
+
+Staging's **public schema** is periodically refreshed from production via `pg_dump` / `pg_restore` — public schema only. The `auth`, `storage`, and `realtime` schemas are intentionally excluded: real member auth accounts are never copied to staging while the ToS/Privacy Policy attorney review is outstanding. Refresh is manual, done at the start of large new build sessions or on demand. See `docs/staging-workflow.md` for the exact procedure.
+
+Schema and RLS migrations always go to **staging first**, are verified there, then applied to production manually.
+
+### Git/deploy workflow (as of BUILD-21)
+
+1. **Claude Code sessions** commit and push directly to the `staging` branch at end of session — no review-before-push gate.
+2. **Production promotion is manual:** Josiah does UAT/BAT on the live staging site (`*.stage.prayerwallapp.com`) and reviews the diff, then opens a GitHub PR in the browser to merge `staging → main`. Not via GitHub Desktop.
+3. **PRs to main are batched by logical unit of work** — not opened after every individual staging push.
+4. **Staging reset:** Before large or new build sessions, staging should be hard-reset to match main to prevent drift. Timing is a judgment call, not a fixed schedule.
 
 ---
 
@@ -530,4 +561,4 @@ Reason is visible to moderator in the inbox to explain the flag.
 
 ---
 
-*Last updated: DOC-03 follow-up (2026-07-24, Claude Project review pass) — corrected two sync gaps DOC-03 missed: this document's readable `submissions`/`reactions`/`notifications` schema summaries were out of sync with the canonical `schema.md` (added `visibility`, `contact_requested`, `source`, `embed_visitor_id`, `reactor_id`, `reactor_display_name`, and the `'praise'` notification type -- this doc's own stated rule is that schema.md wins on any disagreement); and `patterns.md`'s Real-time Subscription example still showed the raw-payload-insert pattern that caused the BUILD-18/19 bug, now rewritten to the corrected join-safe re-fetch pattern. See SESSION_LOG.md for full session history. Update this document as decisions are made -- this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` -- keep both in sync.*
+*Last updated: DOC-04 (2026-07-26) — added Environments & Git Workflow section (two-environment table, staging data policy, git/deploy workflow); updated Routing subsection to reflect BUILD-21 middleware fix (removed hardcoded `PROD_HOSTNAME` constant). See SESSION_LOG.md for full session history. Update this document as decisions are made — this file must live at the project root and be kept current, since Claude Code sessions treat it as source of truth. Canonical exact schema/pattern DDL lives at `.claude/skills/prayer-wall-build/references/` — keep both in sync.*
