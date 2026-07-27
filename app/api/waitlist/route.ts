@@ -4,7 +4,6 @@ import { Resend } from 'resend'
 import { createAdminClient } from '@/lib/supabase/admin'
 import WaitlistConfirmationEmail from '@/emails/waitlist-confirmation'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
 // Replies go to a real inbox (Santé House) — prayerwallapp.com has no inbox hosting.
 const REPLY_TO_ADDRESS = process.env.EMAIL_REPLY_TO_ADDRESS ?? 'prayerwall@santehouse.co'
 
@@ -45,6 +44,7 @@ export async function POST(request: Request) {
 
   // Only send confirmation on first sign-up (not on duplicate).
   if (!error) {
+    const resend = new Resend(process.env.RESEND_API_KEY)
     await resend.emails.send({
       from: process.env.EMAIL_FROM_ADDRESS!,
       replyTo: REPLY_TO_ADDRESS,
